@@ -1,0 +1,116 @@
+9
+
+dir
+1908
+http://exciting-plus.googlecode.com/svn/trunk/tests
+http://exciting-plus.googlecode.com/svn
+
+
+
+2012-05-15T12:23:52.352472Z
+1773
+a.v.kozhevnikov
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+b29bc608-f84f-0410-a42b-6dfa746fd12a
+
+test-003
+dir
+
+test-012
+dir
+
+test-013
+dir
+
+test-004
+dir
+
+test-005
+dir
+
+test-014
+dir
+
+test-006
+dir
+
+test-015
+dir
+
+test-007
+dir
+
+test-016
+dir
+
+test-008
+dir
+
+crpa
+dir
+
+test-009
+dir
+
+tests.sh
+file
+
+
+
+
+2013-05-20T19:33:12.771902Z
+6424f80c80aa6ef45edad6f505577edf
+2010-11-29T10:35:00.806349Z
+1059
+a.v.kozhevnikov
+has-props
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+376
+
+test-010
+dir
+
+test-001
+dir
+
+libapw
+dir
+
+test-011
+dir
+
+test-002
+dir
+

@@ -1,0 +1,83 @@
+K 25
+svn:wc:ra_dav:version-url
+V 38
+/svn/!svn/ver/1066/trunk/utilities/eos
+END
+minf_nm.f90
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/1066/trunk/utilities/eos/minf_nm.f90
+END
+fmin_nm.f90
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/1066/trunk/utilities/eos/fmin_nm.f90
+END
+modmain.f90
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/1066/trunk/utilities/eos/modmain.f90
+END
+eos.f90
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/1066/trunk/utilities/eos/eos.f90
+END
+readinput.f90
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1066/trunk/utilities/eos/readinput.f90
+END
+pveos.f90
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/1066/trunk/utilities/eos/pveos.f90
+END
+fitdata.f90
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/1066/trunk/utilities/eos/fitdata.f90
+END
+eos.in
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/1066/trunk/utilities/eos/eos.in
+END
+getedata.f90
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/1066/trunk/utilities/eos/getedata.f90
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/1066/trunk/utilities/eos/README
+END
+output.f90
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/1066/trunk/utilities/eos/output.f90
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/1066/trunk/utilities/eos/Makefile
+END
+eveos.f90
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/1066/trunk/utilities/eos/eveos.f90
+END

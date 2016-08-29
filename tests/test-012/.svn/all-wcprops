@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/1059/trunk/tests/test-012
+END
+TEST750.OUT_
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1059/trunk/tests/test-012/TEST750.OUT_
+END
+elk.in
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/1059/trunk/tests/test-012/elk.in
+END
+TEST705.OUT_
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1059/trunk/tests/test-012/TEST705.OUT_
+END
+TEST000.OUT_
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1059/trunk/tests/test-012/TEST000.OUT_
+END
+TEST400.OUT_
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1059/trunk/tests/test-012/TEST400.OUT_
+END
+TEST500.OUT_
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1059/trunk/tests/test-012/TEST500.OUT_
+END
+TEST510.OUT_
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1059/trunk/tests/test-012/TEST510.OUT_
+END
+TEST250.OUT_
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1059/trunk/tests/test-012/TEST250.OUT_
+END
+TEST251.OUT_
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1059/trunk/tests/test-012/TEST251.OUT_
+END
+TEST900.OUT_
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1059/trunk/tests/test-012/TEST900.OUT_
+END
+TEST910.OUT_
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1059/trunk/tests/test-012/TEST910.OUT_
+END

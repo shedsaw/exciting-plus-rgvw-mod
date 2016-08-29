@@ -1,0 +1,266 @@
+9
+
+dir
+1908
+http://exciting-plus.googlecode.com/svn/trunk/examples
+http://exciting-plus.googlecode.com/svn
+
+
+
+2012-05-29T13:35:47.780431Z
+1789
+a.v.kozhevnikov
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+b29bc608-f84f-0410-a42b-6dfa746fd12a
+
+LiF-Yambo
+dir
+
+Al-Fermi-surface
+dir
+
+NiO-LDA
+dir
+
+Fe-fast
+dir
+
+diamond-rho3D
+dir
+
+graphene
+dir
+
+Ge
+dir
+
+Fe-FSM-MT-AFM
+dir
+
+Al-STM
+dir
+
+Cu
+dir
+
+Si-phonon
+dir
+
+LiF
+dir
+
+Si
+dir
+
+Fe-Fermi-surface
+dir
+
+TiO2-linopt
+dir
+
+Ni-magnon
+dir
+
+NiO-LDA+U-optimized
+dir
+
+CuFeS2
+dir
+
+C60
+dir
+
+Fe-Mossbauer
+dir
+
+Ru-ELF
+dir
+
+Al-phonon
+dir
+
+HfSiO4
+dir
+
+Ni-Fermi-surface
+dir
+
+Si-PBEsol
+dir
+
+FeAl-LDA+U-INT
+dir
+
+Ni-MOKE
+dir
+
+Al-linopt
+dir
+
+Pb
+dir
+
+BN-ELNES
+dir
+
+ununhexium
+dir
+
+Fe-FSM
+dir
+
+NiO-LDA+U-FLL-tensmom
+dir
+
+Si-Hartree-Fock
+dir
+
+B12
+dir
+
+HEG-OEP
+dir
+
+US-LDA+SOC+U-tensmom
+dir
+
+Nb-autoswidth
+dir
+
+Fe-AFM
+dir
+
+Al-libxc
+dir
+
+Al
+dir
+
+NiO-LDA+U-FLL
+dir
+
+AlAs-fatbands
+dir
+
+TiC-eg-t2g
+dir
+
+Au
+dir
+
+FeAl-LDA
+dir
+
+Al-exp[iq.r]
+dir
+
+Eu
+dir
+
+GaAs
+dir
+
+Nb-superconductor
+dir
+
+Si-str-opt
+dir
+
+H2O-iterative
+dir
+
+Fe-spiral
+dir
+
+NaCl-monomer
+dir
+
+Pu-ELNES
+dir
+
+new
+dir
+
+Fe
+dir
+
+Fe-FSM-MT-FM
+dir
+
+YBCO
+dir
+
+Si-OEP
+dir
+
+README
+file
+
+
+
+
+2013-05-20T19:33:20.903902Z
+71266b771ae5518c8180a0527b3a1813
+2010-11-29T10:35:00.806349Z
+1059
+a.v.kozhevnikov
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+255
+
+HEG-HF
+dir
+
+BN-ELF
+dir
+
+Ni
+dir
+
+FeAl-LDA+U-AMF
+dir
+
+NiO-LDA+U-FLL-Ykwa
+dir
+
+Cr-mono
+dir
+
+Cu-ELNES
+dir
+
+MgB2-Fermi-surface
+dir
+

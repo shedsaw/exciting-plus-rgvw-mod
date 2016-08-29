@@ -1,0 +1,131 @@
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/1066/trunk/utilities/spacegroup
+END
+modmain.f90
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/modmain.f90
+END
+seitzeq.f90
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/seitzeq.f90
+END
+main.f90
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/main.f90
+END
+geomplot.f90
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/geomplot.f90
+END
+gengroup.f90
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/gengroup.f90
+END
+r3mv.f90
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/r3mv.f90
+END
+seitzgen.f90
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/seitzgen.f90
+END
+readinput.f90
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/readinput.f90
+END
+r3cross.f90
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/r3cross.f90
+END
+writegeom.f90
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/writegeom.f90
+END
+sgsymb.f90
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/sgsymb.f90
+END
+findprim.f90
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/findprim.f90
+END
+r3taxi.f90
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/r3taxi.f90
+END
+gencrystal.f90
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/gencrystal.f90
+END
+seitzmul.f90
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/seitzmul.f90
+END
+r3minv.f90
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/r3minv.f90
+END
+r3mm.f90
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/r3mm.f90
+END
+spacegroup.in
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/spacegroup.in
+END
+r3frac.f90
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/r3frac.f90
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/Makefile
+END
+spacegroup.out
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/!svn/ver/1066/trunk/utilities/spacegroup/spacegroup.out
+END
