@@ -11,7 +11,7 @@ F90_LINK_OPTS=$(F90_OPTS)
 LAPACK_LIB = -mkl 
 
 # === compile with HDF5 support ===
-#CPP_OPTS := $(CPP_OPTS) -D_HDF5_
+CPP_OPTS := $(CPP_OPTS) -D_HDF5_
 HDF5_LIB = 
 
 # ==- compile with libXC support ===
