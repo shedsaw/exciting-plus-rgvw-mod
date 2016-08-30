@@ -1,17 +1,17 @@
 MAKE = make
-F90 = ftn
-CXX = CC
-CC = cc
+F90 = mpiifort
+CXX = mpiicxx
+CC = mpiicc
 CPP_OPTS = -D_MPI_
- 
-F90_OPTS = -g -cpp $(CPP_OPTS) 
+
+F90_OPTS = -g -cpp $(CPP_OPTS)
 #F90_OPTS = -O0 -Wall -g -cpp -fbounds-check -fdump-core -fbacktrace $(CPP_OPTS)
 F90_LINK_OPTS=$(F90_OPTS)
 
-LAPACK_LIB = 
+LAPACK_LIB = -mkl 
 
 # === compile with HDF5 support ===
-CPP_OPTS := $(CPP_OPTS) -D_HDF5_
+#CPP_OPTS := $(CPP_OPTS) -D_HDF5_
 HDF5_LIB = 
 
 # ==- compile with libXC support ===
