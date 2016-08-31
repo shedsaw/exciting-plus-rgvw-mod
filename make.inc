@@ -11,8 +11,8 @@ F90_LINK_OPTS=$(F90_OPTS)
 LAPACK_LIB = -mkl 
 
 # === compile with HDF5 support ===
-CPP_OPTS := $(CPP_OPTS) -D_HDF5_
-HDF5_LIB = 
+CPP_OPTS := $(CPP_OPTS) -D_HDF5_ $(HDF5_INC)
+HDF5_LIB_FLAGS = $(HDF5_LIB) -lhdf5_fortran -lhdf5_cpp -lhdf5_hl -lhdf5
 
 # ==- compile with libXC support ===
 #CPP_OPTS := $(CPP_OPTS) -D_LIBXC_
@@ -29,5 +29,5 @@ XC_LIB =
 #MADNESS_LIB = -L$(HOME)/local/lib/ -lMADmra -lMADlinalg -lMADtensor -lMADmisc -lMADmuparser -lMADtinyxml -lMADworld -lmpichcxx -lstdc++
 
 # === collect all libraries under one name ===
-LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(XC_LIB) $(NFFT_LIB) $(MADNESS_LIB)
+LIBS = $(LAPACK_LIB) $(HDF5_LIB_FLAGS) $(XC_LIB) $(NFFT_LIB) $(MADNESS_LIB)
 
