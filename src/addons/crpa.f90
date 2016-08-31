@@ -107,7 +107,7 @@ do iqloc=1,nvqloc
   call genmegq(iq,.true.,.true.,.false.)
   call genu4(iq,nwloc)
 if (mpi_grid_root()) then
-  write(*,*)'iq=%I4 Complete',iq
+  write(*,'("iq=",I4," Complete")')iq
 endif
 enddo
 do iwloc=1,nwloc
