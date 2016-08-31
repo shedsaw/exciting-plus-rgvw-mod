@@ -1,0 +1,8 @@
+#!/bin/bash
+
+#PBS -A UT-TENN0105
+#PBS -N FT-CRPA
+#PBS -l nodes=1,walltime=01:00:00
+cd $PBS_O_WORKDIR
+export I_MPI_DAPL_PROVIDER=ofa-v2-mlx4_0-1u
+mpiexec.hydra -n 16 exciting-plus-rgvw-mod
