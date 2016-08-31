@@ -104,8 +104,11 @@ call papi_timer_start(pt_crpa_tot2)
 ! main loop over q-points
 do iqloc=1,nvqloc
   iq=mpi_grid_map(nvq,dim_q,loc=iqloc)
+write(*,*)'OK31: pos,iq', mpi_grid_dim_pos(dim_k), iq
   call genmegq(iq,.true.,.true.,.false.)
+write(*,*)'OK32: pos,iq', mpi_grid_dim_pos(dim_k), iq
   call genu4(iq,nwloc)
+write(*,*)'OK33: pos,iq', mpi_grid_dim_pos(dim_k), iq
 enddo
 write(*,*)'OK4: pos', mpi_grid_dim_pos(dim_k)
 do iwloc=1,nwloc
