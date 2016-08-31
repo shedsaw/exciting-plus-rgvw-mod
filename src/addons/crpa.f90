@@ -89,16 +89,17 @@ if (mpi_grid_root()) then
   write(*,'("[crpa] size of 4-index U matrix : ",I6," Mb")') &
         &int(16.d0*megqwantran%nwt*megqwantran%nwt*megqwantran%ntr*nwloc/1048576.d0)
 endif
-write(*,*)'OK1: pos', mpi_grid_dim_pos(dim_k)
 call mpi_grid_barrier()
-write(*,*)'OK2: pos', mpi_grid_dim_pos(dim_k)
+write(*,*)'OK1: pos', mpi_grid_dim_pos(dim_k)
 allocate(u4(megqwantran%nwt,megqwantran%nwt,megqwantran%ntr,nwloc))
+write(*,*)'OK2: pos', mpi_grid_dim_pos(dim_k)
 u4=zzero
 if (screenu4) then
   megq_include_bands=chi0_include_bands
 else
   megq_include_bands=(/100.1d0,-100.1d0/)
 endif
+write(*,*)'OK3: pos', mpi_grid_dim_pos(dim_k)
 call papi_timer_start(pt_crpa_tot2)
 ! main loop over q-points
 do iqloc=1,nvqloc
@@ -106,11 +107,13 @@ do iqloc=1,nvqloc
   call genmegq(iq,.true.,.true.,.false.)
   call genu4(iq,nwloc)
 enddo
+write(*,*)'OK4: pos', mpi_grid_dim_pos(dim_k)
 do iwloc=1,nwloc
   do it=1,megqwantran%ntr
     call mpi_grid_reduce(u4(1,1,it,iwloc),megqwantran%nwt*megqwantran%nwt,dims=(/dim_q/))
   enddo
 enddo
+write(*,*)'OK5: pos', mpi_grid_dim_pos(dim_k)
 call papi_timer_stop(pt_crpa_tot2)
 call papi_timer_stop(pt_crpa_tot1)
 
