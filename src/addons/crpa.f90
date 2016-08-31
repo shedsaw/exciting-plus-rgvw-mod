@@ -89,7 +89,9 @@ if (mpi_grid_root()) then
   write(*,'("[crpa] size of 4-index U matrix : ",I6," Mb")') &
         &int(16.d0*megqwantran%nwt*megqwantran%nwt*megqwantran%ntr*nwloc/1048576.d0)
 endif
+write(*,*)'OK1: pos', mpi_grid_dim_pos(dim_k)
 call mpi_grid_barrier()
+write(*,*)'OK2: pos', mpi_grid_dim_pos(dim_k)
 allocate(u4(megqwantran%nwt,megqwantran%nwt,megqwantran%ntr,nwloc))
 u4=zzero
 if (screenu4) then
