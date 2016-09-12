@@ -26,6 +26,10 @@ if (.not.wannier) then
   write(*,*)
   call pstop
 endif
+
+write(*,*)'OK1: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(dim_q)
+call flush(6)
+
 call papi_timer_start(pt_crpa_tot1)
 wannier_megq=.true.
 if (screenu4) then
@@ -46,6 +50,10 @@ endif
 ! read the density and potentials from file
 call readstate
 call genradf
+
+write(*,*)'OK2: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(dim_q)
+call flush(6)
+
 wproc1=.false.
 if (mpi_grid_root()) then
   wproc1=.true.
@@ -72,6 +80,10 @@ else
 ! generate wave-functions for entire BZ
   call genwfnr(151,tq0bz)
 endif
+
+write(*,*)'OK3: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(dim_q)
+call flush(6)
+
 call genwantran(megqwantran,megqwan_mindist,megqwan_maxdist,allwt=.true.)
 ! setup energy mesh
 if (.not.screenu4) lr_nw=1
@@ -90,6 +102,10 @@ if (mpi_grid_root()) then
         &int(16.d0*megqwantran%nwt*megqwantran%nwt*megqwantran%ntr*nwloc/1048576.d0)
 endif
 call mpi_grid_barrier()
+
+write(*,*)'OK4: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(dim_q)
+call flush(6)
+
 allocate(u4(megqwantran%nwt,megqwantran%nwt,megqwantran%ntr,nwloc))
 u4=zzero
 if (screenu4) then
@@ -106,15 +122,24 @@ do iqloc=1,nvqloc
   iq=mpi_grid_map(nvq,dim_q,loc=iqloc)
   call genmegq(iq,.true.,.true.,.false.)
   call genu4(iq,nwloc)
-if (mpi_grid_root()) then
-  write(*,'("iq=",I4," Complete")')iq
-endif
+  if (mpi_grid_root()) then
+    write(*,'("iq=",I4," Complete")')iq
+    flush(6)
+  endif
 enddo
+
+write(*,*)'OK5: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(dim_q)
+call flush(6)
+
 do iwloc=1,nwloc
   do it=1,megqwantran%ntr
     call mpi_grid_reduce(u4(1,1,it,iwloc),megqwantran%nwt*megqwantran%nwt,dims=(/dim_q/))
   enddo
 enddo
+
+write(*,*)'OK6: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(dim_q)
+call flush(6)
+
 call papi_timer_stop(pt_crpa_tot2)
 call papi_timer_stop(pt_crpa_tot1)
 
@@ -229,5 +254,9 @@ if (wproc1) then
 endif
 deallocate(lr_w)
 deallocate(u4)
+
+write(*,*)'OK7: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(dim_q)
+call flush(6)
+
 return
 end
