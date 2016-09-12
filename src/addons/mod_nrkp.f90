@@ -228,12 +228,20 @@ if (wproc.and.fout.gt.0) then
   write(fout,'("Reading energies of states")')
   if (fout.ne.6) call flushifc(fout)
 endif
+
+write(*,*)'OK21: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
 if (mpi_grid_root()) then
 ! read from IBZ
   do ik=1,nkpt
     call getevalsv(vkl(1,ik),evalsv(1,ik))
   enddo
 endif
+
+write(*,*)'OK22: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
 call mpi_grid_bcast(evalsv(1,1),nstsv*nkpt)
 if (allocated(evalsvnr)) deallocate(evalsvnr)
 allocate(evalsvnr(nstsv,nkptnr))
@@ -243,6 +251,10 @@ do ikloc=1,nkptnrloc
   call findkpt(vklnr(1,ik),isym,ik1) 
   evalsvnr(:,ik)=evalsv(:,ik1)
 enddo
+
+write(*,*)'OK23: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
 call timer_stop(t_read_eval)
 if (wproc.and.fout.gt.0) then
   write(fout,'("Done in ",F8.2," seconds")')timer_get_value(t_read_eval)
@@ -285,6 +297,10 @@ if (wproc.and.fout.gt.0) then
   write(fout,'("Reading eigen-vectors")')
   if (fout.ne.6) call flushifc(fout)
 endif
+
+write(*,*)'OK24: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
 call mpi_grid_barrier()
 if (allocated(wfsvmtnrloc)) deallocate(wfsvmtnrloc)
 allocate(wfsvmtnrloc(lmmaxapw,nufrmax,natmtot,nspinor,nstsv,nkptnrloc))
@@ -309,6 +325,10 @@ if (wannier) then
   allocate(wann_unkit(ngkmax,nspinor,nwantot,nkptnrloc))
 endif
 call timer_start(t_read_evec,reset=.true.)
+
+write(*,*)'OK25: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
 ! read eigen-vectors
 if (mpi_grid_side(dims=(/dim_k/))) then
   do ikloc=1,nkptnrloc
@@ -321,6 +341,10 @@ if (mpi_grid_side(dims=(/dim_k/))) then
     endif
   enddo !ikloc
 endif !mpi_grid_side(dims=(/dim_k/)
+
+write(*,*)'OK26: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
 call mpi_grid_barrier
 ! broadcast arrays
 if (tsveqn) then
@@ -332,6 +356,10 @@ else
   call mpi_grid_bcast(evecfdnrloc(1,1,1),nmatmax*nspinor*nstsv*nkptnrloc,&
     &dims=ortdims((/dim_k/)))
 endif
+
+write(*,*)'OK27: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
 call timer_stop(t_read_evec)
 if (wproc.and.fout.gt.0) then
   write(fout,'("Done in ",F8.2," seconds")')timer_get_value(t_read_evec)
@@ -387,6 +415,10 @@ do ikloc=1,nkptnrloc
       &wfsvmtnrloc(1,1,1,1,1,ikloc),wfsvitnrloc(1,1,1,ikloc),pmatnrloc(1,1,1,ikloc))
   endif
 enddo !ikloc
+
+write(*,*)'OK28: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
 ! For linear combinations the wan_info doesn't make sense
 if (wannier_lc) then
   wan_info=1
@@ -429,9 +461,17 @@ if (wannier) then
   enddo !ikloc
   call timer_stop(1)
 endif !wannier
+
+write(*,*)'OK29: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
 ! after optinal band disentanglement we can finally synchronize all eigen-values
 !   and compute band occupation numbers 
 call mpi_grid_reduce(evalsvnr(1,1),nstsv*nkptnr,dims=(/dim_k/),all=.true.)
+
+write(*,*)'OK291: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
 if (allocated(occsvnr)) deallocate(occsvnr)
 allocate(occsvnr(nstsv,nkptnr))
 call occupy2(nkptnr,wkptnr,evalsvnr,occsvnr)
@@ -490,6 +530,10 @@ if (wannier) then
     if (fout.ne.6) call flushifc(fout)
   endif
 endif
+
+write(*,*)'OK292: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
 if (spinpol.and.tsveqn) then
   if (allocated(spinor_ud)) deallocate(spinor_ud)
   allocate(spinor_ud(2,nstsv,nkptnr))
@@ -505,6 +549,10 @@ if (spinpol.and.tsveqn) then
   enddo
   call mpi_grid_reduce(spinor_ud(1,1,1),2*nstsv*nkptnr,dims=(/dim_k/),all=.true.)
 endif  
+
+write(*,*)'OK293: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
 if (wproc.and.fout.gt.0) then
   write(fout,'("Done.")')
 endif
