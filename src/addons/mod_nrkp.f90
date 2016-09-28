@@ -330,8 +330,7 @@ write(*,*)'OK25: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
 call flush(6)
 
 ! read eigen-vectors
-!if (mpi_grid_side(dims=(/dim_k/))) then
-if (.true.) then
+if (mpi_grid_side(dims=(/dim_k/))) then
   do ikloc=1,nkptnrloc
     ik=mpi_grid_map(nkptnr,dim_k,loc=ikloc)
     if (tsveqn) then
