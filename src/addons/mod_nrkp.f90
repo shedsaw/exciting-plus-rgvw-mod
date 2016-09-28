@@ -334,9 +334,21 @@ if (mpi_grid_side(dims=(/dim_k/))) then
   do ikloc=1,nkptnrloc
     ik=mpi_grid_map(nkptnr,dim_k,loc=ikloc)
     if (tsveqn) then
+
+write(*,*)'OK251: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
       call getevecfv(vklnr(1,ik),vgklnr(1,1,ikloc),evecfvnrloc(1,1,1,ikloc))
+
+write(*,*)'OK252: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
       call getevecsv(vklnr(1,ik),evecsvnrloc(1,1,ikloc))
     else
+
+write(*,*)'OK253: pos',mpi_grid_dim_pos(dim_k),mpi_grid_dim_pos(2)
+call flush(6)
+
       call getevecfd(vklnr(1,ik),vgklnr(1,1,ikloc),evecfdnrloc(1,1,ikloc)) 
     endif
   enddo !ikloc
