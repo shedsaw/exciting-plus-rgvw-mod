@@ -55,133 +55,259 @@ if (iostat.ne.0) then
   write(*,*)
   stop
 end if
-call mpi_grid_barrier()
-do i=0,mpi_num_groups-1
-  if (mod(iproc,mpi_num_groups).eq.i) then
-    read(50) version_
-    if ((version(1).ne.version_(1)).or.(version(2).ne.version_(2)) &
-     .or.(version(3).ne.version_(3))) then
-      write(*,*)
-      write(*,'("Warning(readstate): different versions")')
-      write(*,'(" current   : ",I3.3,".",I3.3,".",I3.3)') version
-      write(*,'(" STATE.OUT : ",I3.3,".",I3.3,".",I3.3)') version_
-    end if
-    read(50) spinpol_
-    read(50) nspecies_
-    if (nspecies.ne.nspecies_) then
-      write(*,*)
-      write(*,'("Error(readstate): differing nspecies")')
-      write(*,'(" current   : ",I4)') nspecies
-      write(*,'(" STATE.OUT : ",I4)') nspecies_
-      write(*,*)
-      stop
-    end if
-    read(50) lmmaxvr_
-    read(50) nrmtmax_
-    allocate(spr_(nrmtmax_,nspecies))
-    do is=1,nspecies
-      read(50) natoms_
-      if (natoms(is).ne.natoms_) then
+! if .true. split the parallel read into groups
+! else all ranks read at the same time
+if (do_mpi_groups) then
+  call mpi_grid_barrier()
+  do i=0,mpi_num_groups-1
+    if (mod(iproc,mpi_num_groups).eq.i) then
+      read(50) version_
+      if ((version(1).ne.version_(1)).or.(version(2).ne.version_(2)) &
+       .or.(version(3).ne.version_(3))) then
         write(*,*)
-        write(*,'("Error(readstate): differing natoms for species ",I4)') is
-        write(*,'(" current   : ",I4)') natoms(is)
-        write(*,'(" STATE.OUT : ",I4)') natoms_
+        write(*,'("Warning(readstate): different versions")')
+        write(*,'(" current   : ",I3.3,".",I3.3,".",I3.3)') version
+        write(*,'(" STATE.OUT : ",I3.3,".",I3.3,".",I3.3)') version_
+      end if
+      read(50) spinpol_
+      read(50) nspecies_
+      if (nspecies.ne.nspecies_) then
+        write(*,*)
+        write(*,'("Error(readstate): differing nspecies")')
+        write(*,'(" current   : ",I4)') nspecies
+        write(*,'(" STATE.OUT : ",I4)') nspecies_
         write(*,*)
         stop
       end if
-      read(50) nrmt_(is)
-      read(50) spr_(1:nrmt_(is),is)
-    end do
-    read(50) ngrid_
-    read(50) ngvec_
-    read(50) ndmag_
-    if ((spinpol_).and.(ndmag_.ne.1).and.(ndmag_.ne.3)) then
-      write(*,*)
-      write(*,'("Error(readstate): invalid ndmag in STATE.OUT : ",I8)') ndmag_
-      write(*,*)
-      stop
-    end if
-    read(50) nspinor_
-    read(50) ldapu_
-    read(50) lmmaxlu_
-    ngrtot_=ngrid_(1)*ngrid_(2)*ngrid_(3)
-    allocate(mapir(ngrtot))
-    allocate(rhomt_(lmmaxvr_,nrmtmax_,natmtot))
-    allocate(rhoir_(ngrtot_))
-    allocate(vclmt_(lmmaxvr_,nrmtmax_,natmtot))
-    allocate(vclir_(ngrtot_))
-    allocate(vxcmt_(lmmaxvr_,nrmtmax_,natmtot))
-    allocate(vxcir_(ngrtot_))
-    allocate(veffmt_(lmmaxvr_,nrmtmax_,natmtot))
-    allocate(veffir_(ngrtot_))
-    allocate(veffig_(ngvec_))
-    ! read muffin-tin density
-    read(50) rhomt_,rhoir_
-    ! read Coulomb potential (spin independent)
-    read(50) vclmt_,vclir_
-    ! read exchange-correlation potential
-    read(50) vxcmt_,vxcir_
-    ! read effective potential
-    read(50) veffmt_,veffir_,veffig_
-    ! read magnetisation and effective field
-    if (spinpol_) then
-      allocate(magmt_(lmmaxvr_,nrmtmax_,natmtot,ndmag_))
-      allocate(magir_(ngrtot_,ndmag_))
-      allocate(bxcmt_(lmmaxvr_,nrmtmax_,natmtot,ndmag_))
-      allocate(bxcir_(ngrtot_,ndmag_))
-      read(50) magmt_,magir_
-      read(50) bxcmt_,bxcir_
-    end if
-    ! read LDA+U potential matrix elements
-    if ((ldapu.ne.0).and.(ldapu_.ne.0)) then
-      allocate(vmatlu_(lmmaxlu_,lmmaxlu_,nspinor_,nspinor_,natmtot))
-      read(50) vmatlu_
-      lmmax=min(lmmaxlu,lmmaxlu_)
-      vmatlu(:,:,:,:,:)=0.d0
-      if (nspinor.eq.nspinor_) then
-        vmatlu(1:lmmax,1:lmmax,:,:,:)=vmatlu_(1:lmmax,1:lmmax,:,:,:)
-      else if ((nspinor.eq.1).and.(nspinor_.eq.2)) then
-        vmatlu(1:lmmax,1:lmmax,1,1,:)=0.5d0*(vmatlu_(1:lmmax,1:lmmax,1,1,:) &
-         +vmatlu_(1:lmmax,1:lmmax,2,2,:))
-      else
-        vmatlu(1:lmmax,1:lmmax,1,1,:)=vmatlu_(1:lmmax,1:lmmax,1,1,:)
-        vmatlu(1:lmmax,1:lmmax,2,2,:)=vmatlu_(1:lmmax,1:lmmax,1,1,:)
+      read(50) lmmaxvr_
+      read(50) nrmtmax_
+      allocate(spr_(nrmtmax_,nspecies))
+      do is=1,nspecies
+        read(50) natoms_
+        if (natoms(is).ne.natoms_) then
+          write(*,*)
+          write(*,'("Error(readstate): differing natoms for species ",I4)') is
+          write(*,'(" current   : ",I4)') natoms(is)
+          write(*,'(" STATE.OUT : ",I4)') natoms_
+          write(*,*)
+          stop
+        end if
+        read(50) nrmt_(is)
+        read(50) spr_(1:nrmt_(is),is)
+      end do
+      read(50) ngrid_
+      read(50) ngvec_
+      read(50) ndmag_
+      if ((spinpol_).and.(ndmag_.ne.1).and.(ndmag_.ne.3)) then
+        write(*,*)
+        write(*,'("Error(readstate): invalid ndmag in STATE.OUT : ",I8)') ndmag_
+        write(*,*)
+        stop
       end if
-      deallocate(vmatlu_)
-    end if
-    read(50) natmtot_
-    if (natmtot_.ne.natmtot) then
+      read(50) nspinor_
+      read(50) ldapu_
+      read(50) lmmaxlu_
+      ngrtot_=ngrid_(1)*ngrid_(2)*ngrid_(3)
+      allocate(mapir(ngrtot))
+      allocate(rhomt_(lmmaxvr_,nrmtmax_,natmtot))
+      allocate(rhoir_(ngrtot_))
+      allocate(vclmt_(lmmaxvr_,nrmtmax_,natmtot))
+      allocate(vclir_(ngrtot_))
+      allocate(vxcmt_(lmmaxvr_,nrmtmax_,natmtot))
+      allocate(vxcir_(ngrtot_))
+      allocate(veffmt_(lmmaxvr_,nrmtmax_,natmtot))
+      allocate(veffir_(ngrtot_))
+      allocate(veffig_(ngvec_))
+      ! read muffin-tin density
+      read(50) rhomt_,rhoir_
+      ! read Coulomb potential (spin independent)
+      read(50) vclmt_,vclir_
+      ! read exchange-correlation potential
+      read(50) vxcmt_,vxcir_
+      ! read effective potential
+      read(50) veffmt_,veffir_,veffig_
+      ! read magnetisation and effective field
+      if (spinpol_) then
+        allocate(magmt_(lmmaxvr_,nrmtmax_,natmtot,ndmag_))
+        allocate(magir_(ngrtot_,ndmag_))
+        allocate(bxcmt_(lmmaxvr_,nrmtmax_,natmtot,ndmag_))
+        allocate(bxcir_(ngrtot_,ndmag_))
+        read(50) magmt_,magir_
+        read(50) bxcmt_,bxcir_
+      end if
+      ! read LDA+U potential matrix elements
+      if ((ldapu.ne.0).and.(ldapu_.ne.0)) then
+        allocate(vmatlu_(lmmaxlu_,lmmaxlu_,nspinor_,nspinor_,natmtot))
+        read(50) vmatlu_
+        lmmax=min(lmmaxlu,lmmaxlu_)
+        vmatlu(:,:,:,:,:)=0.d0
+        if (nspinor.eq.nspinor_) then
+          vmatlu(1:lmmax,1:lmmax,:,:,:)=vmatlu_(1:lmmax,1:lmmax,:,:,:)
+        else if ((nspinor.eq.1).and.(nspinor_.eq.2)) then
+          vmatlu(1:lmmax,1:lmmax,1,1,:)=0.5d0*(vmatlu_(1:lmmax,1:lmmax,1,1,:) &
+           +vmatlu_(1:lmmax,1:lmmax,2,2,:))
+        else
+          vmatlu(1:lmmax,1:lmmax,1,1,:)=vmatlu_(1:lmmax,1:lmmax,1,1,:)
+          vmatlu(1:lmmax,1:lmmax,2,2,:)=vmatlu_(1:lmmax,1:lmmax,1,1,:)
+        end if
+        deallocate(vmatlu_)
+      end if
+      read(50) natmtot_
+      if (natmtot_.ne.natmtot) then
+        write(*,*)
+        write(*,'("Error(readstate): differing natmtot")')
+        write(*,'(" current   : ",I4)') natmtot
+        write(*,'(" STATE.OUT : ",I4)') natmtot_
+        write(*,*)
+        stop
+      end if
+      read(50) spnstmax_
+      if (spnstmax_.ne.spnstmax) then
+        write(*,*)
+        write(*,'("Error(readstate): differing spnstmax")')
+        write(*,'(" current   : ",I4)') spnstmax
+        write(*,'(" STATE.OUT : ",I4)') spnstmax_
+        write(*,*)
+        stop
+      end if
+      read(50) spnrmax_
+      if (spnrmax_.ne.spnrmax) then
+        write(*,*)
+        write(*,'("Error(readstate): differing spnrmax")')
+        write(*,'(" current   : ",I4)') spnrmax
+        write(*,'(" STATE.OUT : ",I4)') spnrmax_
+        write(*,*)
+        stop
+      end if
+      read(50) evalcr
+      read(50) spvr
+      read(50) bfcmt
+    endif ! mod(iproc,mpi_num_groups).eq.i
+    call mpi_world_barrier
+  enddo ! i=0,mpi_num_groups
+else
+  read(50) version_
+  if ((version(1).ne.version_(1)).or.(version(2).ne.version_(2)) &
+   .or.(version(3).ne.version_(3))) then
+    write(*,*)
+    write(*,'("Warning(readstate): different versions")')
+    write(*,'(" current   : ",I3.3,".",I3.3,".",I3.3)') version
+    write(*,'(" STATE.OUT : ",I3.3,".",I3.3,".",I3.3)') version_
+  end if
+  read(50) spinpol_
+  read(50) nspecies_
+  if (nspecies.ne.nspecies_) then
+    write(*,*)
+    write(*,'("Error(readstate): differing nspecies")')
+    write(*,'(" current   : ",I4)') nspecies
+    write(*,'(" STATE.OUT : ",I4)') nspecies_
+    write(*,*)
+    stop
+  end if
+  read(50) lmmaxvr_
+  read(50) nrmtmax_
+  allocate(spr_(nrmtmax_,nspecies))
+  do is=1,nspecies
+    read(50) natoms_
+    if (natoms(is).ne.natoms_) then
       write(*,*)
-      write(*,'("Error(readstate): differing natmtot")')
-      write(*,'(" current   : ",I4)') natmtot
-      write(*,'(" STATE.OUT : ",I4)') natmtot_
+      write(*,'("Error(readstate): differing natoms for species ",I4)') is
+      write(*,'(" current   : ",I4)') natoms(is)
+      write(*,'(" STATE.OUT : ",I4)') natoms_
       write(*,*)
       stop
     end if
-    read(50) spnstmax_
-    if (spnstmax_.ne.spnstmax) then
-      write(*,*)
-      write(*,'("Error(readstate): differing spnstmax")')
-      write(*,'(" current   : ",I4)') spnstmax
-      write(*,'(" STATE.OUT : ",I4)') spnstmax_
-      write(*,*)
-      stop
+    read(50) nrmt_(is)
+    read(50) spr_(1:nrmt_(is),is)
+  end do
+  read(50) ngrid_
+  read(50) ngvec_
+  read(50) ndmag_
+  if ((spinpol_).and.(ndmag_.ne.1).and.(ndmag_.ne.3)) then
+    write(*,*)
+    write(*,'("Error(readstate): invalid ndmag in STATE.OUT : ",I8)') ndmag_
+    write(*,*)
+    stop
+  end if
+  read(50) nspinor_
+  read(50) ldapu_
+  read(50) lmmaxlu_
+  ngrtot_=ngrid_(1)*ngrid_(2)*ngrid_(3)
+  allocate(mapir(ngrtot))
+  allocate(rhomt_(lmmaxvr_,nrmtmax_,natmtot))
+  allocate(rhoir_(ngrtot_))
+  allocate(vclmt_(lmmaxvr_,nrmtmax_,natmtot))
+  allocate(vclir_(ngrtot_))
+  allocate(vxcmt_(lmmaxvr_,nrmtmax_,natmtot))
+  allocate(vxcir_(ngrtot_))
+  allocate(veffmt_(lmmaxvr_,nrmtmax_,natmtot))
+  allocate(veffir_(ngrtot_))
+  allocate(veffig_(ngvec_))
+  ! read muffin-tin density
+  read(50) rhomt_,rhoir_
+  ! read Coulomb potential (spin independent)
+  read(50) vclmt_,vclir_
+  ! read exchange-correlation potential
+  read(50) vxcmt_,vxcir_
+  ! read effective potential
+  read(50) veffmt_,veffir_,veffig_
+  ! read magnetisation and effective field
+  if (spinpol_) then
+    allocate(magmt_(lmmaxvr_,nrmtmax_,natmtot,ndmag_))
+    allocate(magir_(ngrtot_,ndmag_))
+    allocate(bxcmt_(lmmaxvr_,nrmtmax_,natmtot,ndmag_))
+    allocate(bxcir_(ngrtot_,ndmag_))
+    read(50) magmt_,magir_
+    read(50) bxcmt_,bxcir_
+  end if
+  ! read LDA+U potential matrix elements
+  if ((ldapu.ne.0).and.(ldapu_.ne.0)) then
+    allocate(vmatlu_(lmmaxlu_,lmmaxlu_,nspinor_,nspinor_,natmtot))
+    read(50) vmatlu_
+    lmmax=min(lmmaxlu,lmmaxlu_)
+    vmatlu(:,:,:,:,:)=0.d0
+    if (nspinor.eq.nspinor_) then
+      vmatlu(1:lmmax,1:lmmax,:,:,:)=vmatlu_(1:lmmax,1:lmmax,:,:,:)
+    else if ((nspinor.eq.1).and.(nspinor_.eq.2)) then
+      vmatlu(1:lmmax,1:lmmax,1,1,:)=0.5d0*(vmatlu_(1:lmmax,1:lmmax,1,1,:) &
+       +vmatlu_(1:lmmax,1:lmmax,2,2,:))
+    else
+      vmatlu(1:lmmax,1:lmmax,1,1,:)=vmatlu_(1:lmmax,1:lmmax,1,1,:)
+      vmatlu(1:lmmax,1:lmmax,2,2,:)=vmatlu_(1:lmmax,1:lmmax,1,1,:)
     end if
-    read(50) spnrmax_
-    if (spnrmax_.ne.spnrmax) then
-      write(*,*)
-      write(*,'("Error(readstate): differing spnrmax")')
-      write(*,'(" current   : ",I4)') spnrmax
-      write(*,'(" STATE.OUT : ",I4)') spnrmax_
-      write(*,*)
-      stop
-    end if
-    read(50) evalcr
-    read(50) spvr
-    read(50) bfcmt
-  endif ! mod(iproc,mpi_num_groups).eq.i
-  call mpi_world_barrier
-enddo ! i=0,mpi_num_groups
+    deallocate(vmatlu_)
+  end if
+  read(50) natmtot_
+  if (natmtot_.ne.natmtot) then
+    write(*,*)
+    write(*,'("Error(readstate): differing natmtot")')
+    write(*,'(" current   : ",I4)') natmtot
+    write(*,'(" STATE.OUT : ",I4)') natmtot_
+    write(*,*)
+    stop
+  end if
+  read(50) spnstmax_
+  if (spnstmax_.ne.spnstmax) then
+    write(*,*)
+    write(*,'("Error(readstate): differing spnstmax")')
+    write(*,'(" current   : ",I4)') spnstmax
+    write(*,'(" STATE.OUT : ",I4)') spnstmax_
+    write(*,*)
+    stop
+  end if
+  read(50) spnrmax_
+  if (spnrmax_.ne.spnrmax) then
+    write(*,*)
+    write(*,'("Error(readstate): differing spnrmax")')
+    write(*,'(" current   : ",I4)') spnrmax
+    write(*,'(" STATE.OUT : ",I4)') spnrmax_
+    write(*,*)
+    stop
+  end if
+  read(50) evalcr
+  read(50) spvr
+  read(50) bfcmt
+endif ! do_mpi_groups
 close(50)
 !---------------------------!
 !     muffin-tin arrays     !

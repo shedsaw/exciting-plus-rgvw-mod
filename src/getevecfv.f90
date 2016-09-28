@@ -50,13 +50,19 @@ call findkpt(vpl,isym,ik)
 inquire(iolength=recl) vkl_,nmatmax_,nstfv_,nspnfv_,evecfv,vgkl_,igkig_
 open(70,file=trim(scrpath)//'EVECFV'//trim(filext),action='READ', &
  form='UNFORMATTED',access='DIRECT',recl=recl)
-call mpi_grid_barrier()
-do i=0,mpi_num_groups-1
-  if (mod(iproc,mpi_num_groups).eq.i) then
-    read(70,rec=ik) vkl_,nmatmax_,nstfv_,nspnfv_,evecfv,vgkl_,igkig_
-  endif
+! if .true. split the parallel read into groups
+! else all ranks read at the same time
+if (do_mpi_groups) then
   call mpi_grid_barrier()
-enddo
+  do i=0,mpi_num_groups-1
+    if (mod(iproc,mpi_num_groups).eq.i) then
+      read(70,rec=ik) vkl_,nmatmax_,nstfv_,nspnfv_,evecfv,vgkl_,igkig_
+    endif
+    call mpi_grid_barrier()
+  enddo
+else
+  read(70,rec=ik) vkl_,nmatmax_,nstfv_,nspnfv_,evecfv,vgkl_,igkig_
+endif
 close(70)
 t1=abs(vkl(1,ik)-vkl_(1))+abs(vkl(2,ik)-vkl_(2))+abs(vkl(3,ik)-vkl_(3))
 if (t1.gt.epslat) then

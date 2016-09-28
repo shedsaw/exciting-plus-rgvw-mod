@@ -1149,6 +1149,8 @@ case('mpigrid')
   end do
   mpigrid_ndim=j
   lmpigrid=.true.
+case('do_mpi_groups')
+  read(50,*,err=20) do_mpi_groups
 case('mpi_num_groups')
   read(50,*,err=20) mpi_num_groups
 case('sic')

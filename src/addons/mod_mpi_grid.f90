@@ -18,6 +18,9 @@ integer iproc
 data iproc/0/
 !> number of processes in the grid
 integer mpi_grid_nproc
+!> flag whether or not to split I/O operations
+logical do_mpi_groups
+data do_mpi_groups/.false./
 !> number of groups used to split I/O operations
 integer mpi_num_groups
 data mpi_num_groups/10/
