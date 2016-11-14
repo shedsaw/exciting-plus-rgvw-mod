@@ -73,7 +73,7 @@ complex(8), allocatable :: wann_c_jk(:,:,:)
 integer ngntujumax
 integer, allocatable :: ngntuju(:,:)
 integer(2), allocatable :: igntuju(:,:,:,:)
-complex(8), allocatable :: gntuju(:,:,:)
+complex(8), allocatable :: gntuju(:,:,:,:)
 
 ! array for k+q points
 !  1-st index: index of k-point in BZ
@@ -206,9 +206,9 @@ if (wproc) then
     write(150,*)
     write(150,'("Array size of matrix elements in Wannier basis (MB) : ",I6)')sz
   endif   
-  sz=int(24.d0*ngntujumax*natmcls*ngq(iq)/1048576.d0)
+  sz=int(24.d0*ngntujumax*ngntujumax*natmcls*ngq(iq)/1048576.d0)
   write(150,*)
-  write(150,'("Maximum number of Gaunt-like coefficients : ",I8)')ngntujumax
+  write(150,'("Maximum number of Gaunt-like coefficients : ",I8)')ngntujumax*ngntujumax
   write(150,'("Array size of Gaunt-like coefficients (MB) : ",I6)')sz
   write(150,*)
   write(150,'("Init done in ",F8.2," seconds")')timer_get_value(1)
