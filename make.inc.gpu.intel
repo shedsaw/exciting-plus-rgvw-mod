@@ -4,8 +4,8 @@ CXX = CC
 CC = cc
 CPP_OPTS = -D_MPI_
  
-#F90_OPTS = -O2 -Wall -cpp $(CPP_OPTS) 
-F90_OPTS = -Wall -g -cpp -fbounds-check -fdump-core -fbacktrace $(CPP_OPTS)
+F90_OPTS = -g -cpp $(CPP_OPTS) 
+#F90_OPTS = -O0 -Wall -g -cpp -fbounds-check -fdump-core -fbacktrace $(CPP_OPTS)
 F90_LINK_OPTS=$(F90_OPTS)
 
 LAPACK_LIB = 
@@ -16,7 +16,7 @@ HDF5_LIB =
 
 # ==- compile with libXC support ===
 #CPP_OPTS := $(CPP_OPTS) -D_LIBXC_
-#XC_LIB = ../libxc.a
+XC_LIB =
 
 # ==- compile with NFFT support ===
 #CPP_OPTS := $(CPP_OPTS) -D_NFFT_
@@ -29,5 +29,5 @@ HDF5_LIB =
 #MADNESS_LIB = -L$(HOME)/local/lib/ -lMADmra -lMADlinalg -lMADtensor -lMADmisc -lMADmuparser -lMADtinyxml -lMADworld -lmpichcxx -lstdc++
 
 # === collect all libraries under one name ===
-LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(XC_LIB) $(NFFT_LIB) $(MADNESS_LIB)
+LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(XC_LIB) $(NFFT_LIB) $(MADNESS_LIB) ./addons/expigqr/cublas_fortran.o ./addons/expigqr/cublas_fortran_iso.o $(CUDA_LIB) -lcublas -lcudart
 

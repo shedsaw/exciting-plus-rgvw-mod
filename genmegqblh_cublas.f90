@@ -22,7 +22,7 @@ integer wfsize
 integer ivg1(3)
 integer i,j,ik,jk,igkq,n1,ispn1,ispn2,ist1,ist2,ic
 integer ig,ig1,ig2,ias,ifg,ir
-logical l1
+logical l1, wprocrank
 complex(8), allocatable :: wftmp1(:,:)
 complex(8), allocatable :: wftmp2(:,:)
 complex(8), allocatable :: wfir1(:)
@@ -43,6 +43,18 @@ allocate(wftmp2(wfsize,nstsv))
 allocate(wfir1(ngrtot))
 call papi_timer_start(pt_megqblh)
 
+!wprocrank=.false.
+!if (mpi_grid_root((/dim_k/))) then
+!  wprocrank=.true.
+!endif
+
+!if(wprocrank) then
+!write(*,*) 'wprocrank is ',wprocrank
+!flush(6)
+
+!write(*,*) 'Entered into genmegqblh_cublas.f90 and have allocated wftmp1, wftmp2, and wfir1'
+!flush(6)
+!endif
 ! global k-point
 ik=mpi_grid_map(nkptnr,dim_k,loc=ikloc)
 ! jk=k+q-G_q
@@ -63,12 +75,19 @@ b1Size = lmmaxapw*nufrmax*sizeof_complex
 b2Size = b1Size
 gntujuSize = lmmaxapw*nufrmax*b1Size
 
+!if (wprocrank) then
+!write(*,*) 'Allocated the local batch arrays and the device pointer arrays'
+!flush(6)
+!endif
 do i=1,batch_count
   stat = cudaMalloc(h_d_b1(i),b1Size)
   stat = cudaMalloc(h_d_b2(i),b2Size)
   stat = cudaMalloc(h_d_gntuju(i),gntujuSize)
 enddo
-
+!if (wprocrank) then
+!write(*,*) 'cudaMalloced the device ptr arrays'
+!flush(6)
+!endif
 bytes = batch_count*sizeof_ptr
 
 stat = cudaMalloc(d_b1, bytes)
@@ -77,27 +96,30 @@ stat = cudaMalloc(d_gntuju, bytes)
 stat = cudaMemcpy(d_b1, C_LOC(h_d_b1(1)),bytes,cudaMemcpyHostToDevice); 
 stat = cudaMemcpy(d_b2, C_LOC(h_d_b2(1)),bytes,cudaMemcpyHostToDevice); 
 stat = cudaMemcpy(d_gntuju, C_LOC(h_d_gntuju(1)),bytes,cudaMemcpyHostToDevice); 
-
+!if (wprocrank) then
+!write(*,*) 'cudaMalloced the arrays and copied over the batch array ptrs'
+!flush(6)
+!endif
 stat = cublasCreate(handle)
 stat = cudaStreamCreate(stream)
-
-write(*,*) 'ngkmax=',ngkmax
-write(*,*) 'nstsv=',nstsv
-write(*,*) 'iq=',iq
-write(*,*) 'ngq(iq)=',ngq(iq)
-write(*,*) 'ngrtot=',ngrtot
-write(*,*) 'lmmaxapw=',lmmaxapw
-write(*,*) 'nufrmax=',nufrmax
-write(*,*) 'natmtot=',natmtot
-write(*,*) 'wfsize=',wfsize
-write(*,*) 'batch_count=',batch_count
-write(*,*) 'b1Size=',b1Size
-write(*,*) 'gntujuSize=',gntujuSize
-write(*,*) 'bytes=',bytes
-write(*,*) 'nspinor=',nspinor
-write(*,*) 'ig=1..',ngq(iq)
-write(*,*) 'ias=1,..',natmtot
-
+!if (wprocrank) then
+!write(*,*) 'ngkmax=',ngkmax
+!write(*,*) 'nstsv=',nstsv
+!write(*,*) 'iq=',iq
+!write(*,*) 'ngq(iq)=',ngq(iq)
+!write(*,*) 'ngrtot=',ngrtot
+!write(*,*) 'lmmaxapw=',lmmaxapw
+!write(*,*) 'nufrmax=',nufrmax
+!write(*,*) 'natmtot=',natmtot
+!write(*,*) 'wfsize=',wfsize
+!write(*,*) 'batch_count=',batch_count
+!write(*,*) 'b1Size=',b1Size
+!write(*,*) 'gntujuSize=',gntujuSize
+!write(*,*) 'bytes=',bytes
+!write(*,*) 'nspinor=',nspinor
+!write(*,*) 'ig=1..',ngq(iq)
+!write(*,*) 'ias=1,..',natmtot
+!endif
 do ispn1=1,nspinor
   if (expigqr22.eq.1) ispn2=ispn1
 ! index of the interband transitions
@@ -139,12 +161,16 @@ do ispn1=1,nspinor
           stat  = cublasSetMatrixAsync(lmmaxapw*nufrmax,1,sizeof_complex,&
            &C_LOC(b2Batch(1,1,idx)),lmmaxapw*nufrmax, h_d_b2(idx), &
            &lmmaxapw*nufrmax, stream)
+
           !!call zgemm('N','N',lmmaxapw*nufrmax,1,lmmaxapw*nufrmax,&
           !!  &zone,gntuju(1,1,ic,ig),lmmaxapw*nufrmax,b1,lmmaxapw*nufrmax,&
           !!  &zzero,b2,lmmaxapw*nufrmax)
           !!wftmp1((ias-1)*lmmaxapw*nufrmax+1:ias*lmmaxapw*nufrmax,ig)=b2(:)
         enddo !ias
       enddo !ig  
+
+      !!write(*,*) 'Finished calling SetMatrixAsync'
+      !!flush(6)
       !do ig=1, batch_count
       !  cublasSetMatrixAsync(lmmaxapw*nufrmax,1,sizeof_complex,&
       !   &C_LOC(b1Batch(1,1,ig)),lmmaxapw*nufrmax, h_d_b1, &
@@ -223,23 +249,45 @@ do ispn1=1,nspinor
       &zone,megqblh(i,1,ikloc),nstsv*nstsv)
     i=i+n1
     call timer_stop(5)
+!    if (wprocrank) then
+!    write(*,*) '  Finished iteration of do while loop'
+!    flush(6)
+!    endif
   enddo !while
 enddo !ispn
 deallocate(wftmp1)
 deallocate(wftmp2)
 deallocate(wfir1)
-
+!if (wprocrank) then
+!write(*,*) 'Finished do while loop and deallocated wftmp1, wftmp2, wfir1'
+!flush(6)
+!endif
 do i=1,batch_count
   call cudaFree(h_d_b1(i))
   call cudaFree(h_d_b2(i))
   call cudaFree(h_d_gntuju(i))
 enddo
+!if (wprocrank) then
+!write(*,*) 'Finished calling cudaFree over the batch count of host to device ptr arrays'
+!flush(6)
+!endif
 deallocate(b1Batch)
 deallocate(b2Batch)
+!if (wprocrank) then
+!write(*,*) 'Deallocated b1Batch and b2Batch'
+!flush(6)
+!endif
 !deallocate(gntujuBatch)
 call cublasDestroy(handle)
+!if (wprocrank) then
+!write(*,*) 'Finished call cublasDestroy on handle'
+!flush(6)
+!endif
 stat =  cudaStreamDestroy(stream)
+!if (wprocrank) then
+!write(*,*) 'Finished cudaStreamDestroy(stream)'
+!flush(6)
+!endif
 call papi_timer_stop(pt_megqblh)
-
 return
 end
