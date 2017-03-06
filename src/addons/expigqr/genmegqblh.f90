@@ -61,13 +61,10 @@ do ispn1=1,nspinor
           b1=dconjg(wfsvmt1(:,ias,ispn1,ist1)*sfacgq(ig,ias))
           ic=ias2ic(ias)
           b2=zzero
-          !do j=1,ngntuju(ic,ig)
-          !  b2(igntuju(2,j,ic,ig))=b2(igntuju(2,j,ic,ig))+&
-          !    &b1(igntuju(1,j,ic,ig))*gntuju(j,ic,ig)
-          !enddo
-          call zgemm('N','N',lmmaxapw*nufrmax,1,lmmaxapw*nufrmax,&
-            &zone,gntuju(1,1,ic,ig),lmmaxapw*nufrmax,b1,lmmaxapw*nufrmax,&
-            &zzero,b2,lmmaxapw*nufrmax)
+          do j=1,ngntuju(ic,ig)
+            b2(igntuju(2,j,ic,ig))=b2(igntuju(2,j,ic,ig))+&
+              &b1(igntuju(1,j,ic,ig))*gntuju(j,ic,ig)
+          enddo
           wftmp1((ias-1)*lmmaxapw*nufrmax+1:ias*lmmaxapw*nufrmax,ig)=b2(:)
         enddo !ias
       enddo !ig  

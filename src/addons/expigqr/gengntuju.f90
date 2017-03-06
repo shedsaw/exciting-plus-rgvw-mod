@@ -123,13 +123,13 @@ do igloc=1,ngqloc
                 do l3=0,lmaxexp
                   zt1=zt1+zm(l3,lm2,lm1)*uju(l3,l1,l2,io1,io2,(ic-1)*ngqsh(iq)+gqshidx(ig,iq)) 
                 enddo !l3
-                !if (abs(zt1).gt.1d-12) then
-                  !ngntuju(ic,ig)=ngntuju(ic,ig)+1
-                  !n=ngntuju(ic,ig)
-                  gntuju(lm2+(io2-1)*lmmaxapw,lm1+(io1-1)*lmmaxapw,ic,ig)=zt1
-                  !igntuju(1,n,ic,ig)=lm1+(io1-1)*lmmaxapw
-                  !igntuju(2,n,ic,ig)=lm2+(io2-1)*lmmaxapw
-                !endif
+                if (abs(zt1).gt.1d-12) then
+                  ngntuju(ic,ig)=ngntuju(ic,ig)+1
+                  n=ngntuju(ic,ig)
+                  gntuju(n,ic,ig)=zt1
+                  igntuju(1,n,ic,ig)=lm1+(io1-1)*lmmaxapw
+                  igntuju(2,n,ic,ig)=lm2+(io2-1)*lmmaxapw
+                endif
               enddo !io2
             enddo !io1
           enddo !m2
@@ -157,7 +157,7 @@ enddo !ig
 ! synchronize blocks of G-vectors arrays
 i=ngq(iq)/ngvb
 do ig=1,i
-  call mpi_grid_reduce(gntuju(1,1,1,(ig-1)*ngvb+1),ngvb*ngntujumax*ngntujumax*natmcls,&
+  call mpi_grid_reduce(gntuju(1,1,(ig-1)*ngvb+1),ngvb*ngntujumax*natmcls,&
     &dims=(/dim_k/),all=.true.)
   call mpi_grid_reduce(igntuju(1,1,1,(ig-1)*ngvb+1),ngvb*2*ngntujumax*natmcls,&
     &dims=(/dim_k/),all=.true.)
@@ -166,7 +166,7 @@ do ig=1,i
   call mpi_grid_barrier(dims=(/dim_k/))
 enddo
 do ig=i*ngvb+1,ngq(iq)
-  call mpi_grid_reduce(gntuju(1,1,1,ig),ngntujumax*ngntujumax*natmcls,dims=(/dim_k/),&
+  call mpi_grid_reduce(gntuju(1,1,ig),ngntujumax*natmcls,dims=(/dim_k/),&
     &all=.true.)
   call mpi_grid_reduce(igntuju(1,1,1,ig),2*ngntujumax*natmcls,dims=(/dim_k/),&
     &all=.true.)
