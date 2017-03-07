@@ -171,7 +171,7 @@ if ( iproc.eq.0 ) call mpi_get_time(etime)
 
 etime = etime - stime
 
-if (iproc.eq.0) write(*,'("Elapsed time by MPI_Wtime : ",F12.4," seconds")')(etime-stime)
+if (iproc.eq.0) write(*,'("Elapsed time by MPI_Wtime : ",F12.4," seconds")')etime
 
 call papi_finalize
 call hdf5_finalize
