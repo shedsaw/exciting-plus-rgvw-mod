@@ -102,6 +102,18 @@ stat = cudaMemcpy(d_gntuju, C_LOC(h_d_gntuju(1)),bytes,cudaMemcpyHostToDevice);
 !endif
 stat = cublasCreate(handle)
 stat = cudaStreamCreate(stream)
+
+do ig=1,ngq(iq)
+  do ias=1,natmtot
+    idx = (ig-1)*natmtot + ias 
+    ic=ias2ic(ias)
+             
+    stat = cublasSetMatrixAsync(lmmaxapw*nufrmax,lmmaxapw*nufrmax,&
+     &sizeof_complex,C_LOC(gntuju(1,1,ic,ig)),lmmaxapw*nufrmax,&
+     &h_d_gntuju(idx),lmmaxapw*nufrmax, stream)
+  enddo
+enddo
+
 !if (wprocrank) then
 !write(*,*) 'ngkmax=',ngkmax
 !write(*,*) 'nstsv=',nstsv
@@ -154,13 +166,16 @@ do ispn1=1,nspinor
           stat  = cublasSetMatrixAsync(lmmaxapw*nufrmax,1,sizeof_complex,&
            &C_LOC(b1Batch(1,1,idx)),lmmaxapw*nufrmax, h_d_b1(idx), &
            &lmmaxapw*nufrmax, stream)
-          stat = cublasSetMatrixAsync(lmmaxapw*nufrmax,lmmaxapw*nufrmax,&
-           &sizeof_complex,C_LOC(gntuju(1,1,ic,ig)),lmmaxapw*nufrmax,&
-           &h_d_gntuju(idx),lmmaxapw*nufrmax, stream)
 
-          stat  = cublasSetMatrixAsync(lmmaxapw*nufrmax,1,sizeof_complex,&
-           &C_LOC(b2Batch(1,1,idx)),lmmaxapw*nufrmax, h_d_b2(idx), &
-           &lmmaxapw*nufrmax, stream)
+          !stat = cublasSetMatrixAsync(lmmaxapw*nufrmax,lmmaxapw*nufrmax,&
+          ! &sizeof_complex,C_LOC(gntuju(1,1,ic,ig)),lmmaxapw*nufrmax,&
+          ! &h_d_gntuju(idx),lmmaxapw*nufrmax, stream)
+
+          !stat  = cublasSetMatrixAsync(lmmaxapw*nufrmax,1,sizeof_complex,&
+          ! &C_LOC(b2Batch(1,1,idx)),lmmaxapw*nufrmax, h_d_b2(idx), &
+          ! &lmmaxapw*nufrmax, stream)
+
+          stat = cudaMemset( h_d_b2(idx), 0, lmmaxapw*nufrmax*sizeof_complex)
 
           !!call zgemm('N','N',lmmaxapw*nufrmax,1,lmmaxapw*nufrmax,&
           !!  &zone,gntuju(1,1,ic,ig),lmmaxapw*nufrmax,b1,lmmaxapw*nufrmax,&
