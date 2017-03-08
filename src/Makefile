@@ -35,8 +35,9 @@ SRC_modules = ./addons/mod_mpi_grid.f90 \
               ./addons/sic/mod_sic.f90 \
               ./addons/mod_ws.f90 \
               ./addons/mod_rs.f90 \
-              ./addons/mod_libapw.f90
-              
+              ./addons/mod_libapw.f90 \
+              ./addons/expigqr/cublas_fortran_iso.f90
+
 OBJ_modules = $(SRC_modules:.f90=.o)
 SRC = $(shell find . -name \*.f90)
 OBJ = $(SRC:.f90=.o)
@@ -54,6 +55,10 @@ EXE = elk
 .f90.o:
 	$(F90) $(F90_OPTS) -c -o $(*D)/$(*F).o $<
 
+.SUFFIXES: .cu
+
+.cu.o:
+	nvcc $(NVCC_OPTS) -c $<
 #-------------------------------------------------------------------------------
 # Targets
 #-------------------------------------------------------------------------------
@@ -77,6 +82,9 @@ ifneq (,$(findstring D_LIBAPW_,$(CPP_OPTS)))
 endif
 
 elk:	$(OBJ_modules) $(OBJ)
+	cd ./addons/expigqr; \
+	nvcc -c -O2 -G cublas_fortran.cu; \
+	ftn -O2 -D_MPI_ -c -I/ccs/home/ssawyer1/exciting-plus-rgvw-mod/src/ genmegqblh.f90; cd ../../ ;
 	$(F90) $(F90_LINK_OPTS) -o $(EXE) $(OBJ) $(LIBS)
 
 lib:
