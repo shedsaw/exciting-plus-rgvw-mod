@@ -273,6 +273,10 @@ enddo
 !endif
 deallocate(b1Batch)
 deallocate(b2Batch)
+
+deallocate(h_d_b1)
+deallocate(h_d_b2)
+deallocate(h_d_gntuju)
 !if (wprocrank) then
 !write(*,*) 'Deallocated b1Batch and b2Batch'
 !flush(6)
