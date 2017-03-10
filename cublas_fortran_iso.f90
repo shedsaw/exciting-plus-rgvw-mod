@@ -133,6 +133,19 @@ module cublas_f
         type(C_PTR), value :: stream
     end subroutine
 
+    integer(C_INT) function cudaMemset(ptr, val, bytes) BIND(C, NAME='cudaMemset')
+        use ISO_C_BINDING
+        type(C_PTR) :: ptr
+        integer(C_SIZE_T), value :: val
+        integer(C_SIZE_T), value :: bytes
+    end function
+
+    integer(C_INT) function addOffsetToPtr(array, offset) BIND(C, NAME='f_addOffsetToPtr')
+        use ISO_C_BINDING
+        type(C_PTR) :: array
+        integer(C_SIZE_T), value :: offset
+    end function
+
   END INTERFACE
 
 end module cublas_f

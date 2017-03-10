@@ -53,3 +53,8 @@ extern "C" void f_cudaStreamDestroy(cudaStream_t *stream)
 {
     cudaStreamDestroy(*stream);
 }
+
+extern "C" void f_addOffsetToPtr(size_t* array, size_t offset)
+{
+    array[0] = array[0] + offset;
+}

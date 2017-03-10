@@ -28,12 +28,12 @@ complex(8), allocatable :: wftmp2(:,:)
 complex(8), allocatable :: wfir1(:)
 complex(8) b1(lmmaxapw*nufrmax),b2(lmmaxapw*nufrmax)
 
-complex(8),dimension(:,:,:),pointer :: b1Batch, b2Batch
-complex(8),dimension(:,:,:),pointer :: gntujuBatch
+complex(8),dimension(:),pointer :: b1Batch, b2Batch
+complex(8),dimension(:),pointer :: gntujuBatch
 type(C_PTR) :: d_b1, d_b2, d_gntuju
 type(C_PTR), dimension(:), pointer :: h_d_b1, h_d_b2, h_d_gntuju
 type(C_PTR) :: handle,stream
-integer :: sizeof_complex,sizeof_ptr,idx,stat,batch_count
+integer :: sizeof_complex,sizeof_ptr,idx,idx2,stat,batch_count
 integer(8) :: b1Size,b2Size,gntujuSize,bytes
 parameter (sizeof_complex=16,sizeof_ptr=8)
 wfsize=lmmaxapw*nufrmax*natmtot+ngknr2
@@ -65,29 +65,55 @@ igkq=idxkq(2,ik)
 batch_count = ngq(iq)*natmtot
 
 !allocate(gntujuBatch(lmmaxapw*nufrmax, lmmaxapw*nufrmax, batch_count))
-allocate(b1Batch(lmmaxapw*nufrmax, 1, batch_count))
-allocate(b2Batch(lmmaxapw*nufrmax, 1, batch_count))
- 
+allocate(b1Batch(lmmaxapw*nufrmax*batch_count))
+allocate(b2Batch(lmmaxapw*nufrmax*batch_count))
+allocate(gntujuBatch(lmmaxapw*nufrmax*lmmaxapw*nufrmax*batch_count))
+
 allocate(h_d_b1(batch_count))
 allocate(h_d_b2(batch_count))
 allocate(h_d_gntuju(batch_count))
-b1Size = lmmaxapw*nufrmax*sizeof_complex
+
+b1Size = lmmaxapw*nufrmax*batch_count*sizeof_complex
 b2Size = b1Size
 gntujuSize = lmmaxapw*nufrmax*b1Size
+
 
 !if (wprocrank) then
 !write(*,*) 'Allocated the local batch arrays and the device pointer arrays'
 !flush(6)
 !endif
+!Allocate space on the device to hold the batch arrays as a contiguous memory block
+stat = cudaMalloc(h_d_b1(1), b1Size)
+stat = cudaMalloc(h_d_b2(1), b2Size)
+stat = cudaMalloc(h_d_gntuju(i), gntujuSize)
+
 do i=1,batch_count
-  stat = cudaMalloc(h_d_b1(i),b1Size)
-  stat = cudaMalloc(h_d_b2(i),b2Size)
-  stat = cudaMalloc(h_d_gntuju(i),gntujuSize)
+  !h_d_b1(i) = h_d_b1(i) + b1Size
+  !h_d_b2(i) = h_d_b2(i) + b2Size
+  !h_d_gntuju(i) = h_d_gntuju(i) + gntujuSize
+
+   stat = addOffsetToPtr( C_LOC(h_d_b1), b1Size )
+   stat = addOffsetToPtr( C_LOC(h_d_b2), b2Size )
+   stat = addOffsetToPtr( C_LOC(h_d_gntuju), gntujuSize )
 enddo
+
 !if (wprocrank) then
 !write(*,*) 'cudaMalloced the device ptr arrays'
 !flush(6)
 !endif
+
+!Now we copy the host gntuju array into a contiguous block.
+gntujuSize = lmmaxapw*lmmaxapw*nufrmax*nufrmax*sizeof_complex
+do ig=1,ngq(iq)
+  do ias=1,natmtot
+    idx= ( (ig-1)*natmtot + ias - 1 )*(lmmaxapw*lmmaxapw*nufrmax*nufrmax) + 1
+    ic = ias2ic(ias)
+
+    call memcopy(gntuju(1,1,ic,ig), gntujuBatch(idx),gntujuSize)
+  enddo
+enddo
+gntujuSize = lmmaxapw*nufrmax*b1Size
+
 bytes = batch_count*sizeof_ptr
 
 stat = cudaMalloc(d_b1, bytes)
@@ -102,6 +128,10 @@ stat = cudaMemcpy(d_gntuju, C_LOC(h_d_gntuju(1)),bytes,cudaMemcpyHostToDevice);
 !endif
 stat = cublasCreate(handle)
 stat = cudaStreamCreate(stream)
+
+! Transfer gntujuBatch array once.
+stat = cudaMemcpy(h_d_gntuju(1), C_LOC(gntujuBatch(1)), gntujuSize, cudaMemcpyHostToDevice)
+
 !if (wprocrank) then
 !write(*,*) 'ngkmax=',ngkmax
 !write(*,*) 'nstsv=',nstsv
@@ -139,10 +169,12 @@ do ispn1=1,nspinor
       do ig=1,ngq(iq)
 ! precompute muffint-tin part of \psi_1^{*}(r)*e^{-i(G+q)r}
         do ias=1,natmtot
-          idx = (ig-1)*natmtot + ias 
-          b1Batch(:,1,idx)=dconjg(wfsvmt1(:,ias,ispn1,ist1)*sfacgq(ig,ias))
-          ic=ias2ic(ias)
-          b2Batch(:,1,idx)=zzero
+          idx = ( (ig-1)*natmtot + ias - 1 )*(lmmaxapw*nufrmax) + 1
+          do j=1,lmmaxapw*nufrmax
+            b1Batch(idx+j)=dconjg(wfsvmt1(j,ias,ispn1,ist1)*sfacgq(ig,ias))
+         enddo
+         !ic=ias2ic(ias)
+          !b2Batch(:,1,idx)=zzero
           !b2=zzero
           !do j=1,ngntuju(ic,ig)
           !  b2(igntuju(2,j,ic,ig))=b2(igntuju(2,j,ic,ig))+&
@@ -151,16 +183,19 @@ do ispn1=1,nspinor
 
           !call memcopy(b1(1), b1Batch(1,1,idx), b1Size) 
           !call memcopy(gntuju(1,1,ic,ig), gntujuBatch(1,1,idx),gntujuSize) 
-          stat  = cublasSetMatrixAsync(lmmaxapw*nufrmax,1,sizeof_complex,&
-           &C_LOC(b1Batch(1,1,idx)),lmmaxapw*nufrmax, h_d_b1(idx), &
-           &lmmaxapw*nufrmax, stream)
-          stat = cublasSetMatrixAsync(lmmaxapw*nufrmax,lmmaxapw*nufrmax,&
-           &sizeof_complex,C_LOC(gntuju(1,1,ic,ig)),lmmaxapw*nufrmax,&
-           &h_d_gntuju(idx),lmmaxapw*nufrmax, stream)
+          !stat  = cublasSetMatrixAsync(lmmaxapw*nufrmax,1,sizeof_complex,&
+          ! &C_LOC(b1Batch(1,1,idx)),lmmaxapw*nufrmax, h_d_b1(idx), &
+          ! &lmmaxapw*nufrmax, stream)
 
-          stat  = cublasSetMatrixAsync(lmmaxapw*nufrmax,1,sizeof_complex,&
-           &C_LOC(b2Batch(1,1,idx)),lmmaxapw*nufrmax, h_d_b2(idx), &
-           &lmmaxapw*nufrmax, stream)
+          !stat = cublasSetMatrixAsync(lmmaxapw*nufrmax,lmmaxapw*nufrmax,&
+          ! &sizeof_complex,C_LOC(gntuju(1,1,ic,ig)),lmmaxapw*nufrmax,&
+          ! &h_d_gntuju(idx),lmmaxapw*nufrmax, stream)
+
+          !stat  = cublasSetMatrixAsync(lmmaxapw*nufrmax,1,sizeof_complex,&
+          ! &C_LOC(b2Batch(1,1,idx)),lmmaxapw*nufrmax, h_d_b2(idx), &
+          ! &lmmaxapw*nufrmax, stream)
+
+          !stat = cudaMemset( h_d_b2(idx), 0, lmmaxapw*nufrmax*sizeof_complex)
 
           !!call zgemm('N','N',lmmaxapw*nufrmax,1,lmmaxapw*nufrmax,&
           !!  &zone,gntuju(1,1,ic,ig),lmmaxapw*nufrmax,b1,lmmaxapw*nufrmax,&
@@ -168,6 +203,12 @@ do ispn1=1,nspinor
           !!wftmp1((ias-1)*lmmaxapw*nufrmax+1:ias*lmmaxapw*nufrmax,ig)=b2(:)
         enddo !ias
       enddo !ig  
+
+      ! Set all b2Batch to zero.
+      stat = cudaMemset( h_d_b2(1), 0, b2Size)
+
+      ! Transfer all of b1Batch at once.
+      stat = cudaMemcpy(h_d_b1(1), C_LOC(b1Batch(1)), b1Size, cudaMemcpyHostToDevice)
 
       !!write(*,*) 'Finished calling SetMatrixAsync'
       !!flush(6)
@@ -217,13 +258,9 @@ do ispn1=1,nspinor
        &1,lmmaxapw*nufrmax,zone,d_gntuju,lmmaxapw*nufrmax,d_b1,&
        &lmmaxapw*nufrmax,zzero,d_b2,lmmaxapw*nufrmax,batch_count)
     
+    ! Get the result back from the  GPU.
+    stat = cudaMemcpy( C_LOC(b2Batch), h_d_b2(1), b2Size, cudaMemcpyDeviceToHost)
 
-    do ig=1,batch_count
-      stat = cublasGetMatrixAsync(lmmaxapw*nufrmax,1,sizeof_complex,&
-        &C_LOC(b2Batch(1,1,ig)),lmmaxapw*nufrmax, h_d_b2(ig), &
-        &lmmaxapw*nufrmax, stream)
-    enddo
- 
     call timer_start(5)
     n1=0
 ! collect right |ket> states into matrix wftmp2
@@ -238,8 +275,9 @@ do ispn1=1,nspinor
     call cudaStreamSynchronize(stream)
       do ig=1,ngq(iq)
         do ias=1,natmtot
-           idx = (ig-1)*natmtot + ias
-           wftmp1((ias-1)*lmmaxapw*nufrmax+1:ias*lmmaxapw*nufrmax,ig)=b2Batch(:,1,idx)
+           idx = ( (ig-1)*natmtot + ias - 1 )*(lmmaxapw*nufrmax) + 1
+           idx2 = ( (ig-1)*natmtot + ias )*(lmmaxapw*nufrmax)
+           wftmp1((ias-1)*lmmaxapw*nufrmax+1:ias*lmmaxapw*nufrmax,ig)=b2Batch(idx:idx2)
         enddo
       enddo
 
@@ -273,6 +311,10 @@ enddo
 !endif
 deallocate(b1Batch)
 deallocate(b2Batch)
+
+deallocate(h_d_b1)
+deallocate(h_d_b2)
+deallocate(h_d_gntuju)
 !if (wprocrank) then
 !write(*,*) 'Deallocated b1Batch and b2Batch'
 !flush(6)

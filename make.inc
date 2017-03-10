@@ -4,15 +4,15 @@ CXX = CC
 CC = cc
 CPP_OPTS = -D_MPI_
  
-#F90_OPTS = -O2 -cpp $(CPP_OPTS) 
-F90_OPTS =  -O3 -fast -fastsse -Mpreprocess -Munroll -Minfo=all $(CPP_OPTS) 
+F90_OPTS = -O2 -cpp $(CPP_OPTS) 
+#F90_OPTS =  -O3 -fast -fastsse -Mpreprocess -Munroll -Minfo=all $(CPP_OPTS) 
 #F90_OPTS = -O0 -Wall -g -cpp -fbounds-check -fdump-core -fbacktrace $(CPP_OPTS)
 F90_LINK_OPTS=$(F90_OPTS)
 
-NVCC_OPTS = -G -O2
+#NVCC_OPTS = -G -O2
 
 
-LAPACK_LIB =
+LAPACK_LIB = -mkl
 
 # === compile with HDF5 support ===
 CPP_OPTS := $(CPP_OPTS) -D_HDF5_
@@ -34,5 +34,5 @@ XC_LIB =
 
 # === collect all libraries under one name ===
 #LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(XC_LIB) $(NFFT_LIB) $(MADNESS_LIB)
-LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(XC_LIB) $(NFFT_LIB) $(MADNESS_LIB) ./addons/expigqr/cublas_fortran.o $(CUDA_LIB) -lcublas -lcudart
+LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(XC_LIB) $(NFFT_LIB) $(MADNESS_LIB) ./addons/expigqr/cublas_fortran.o ./addons/expigqr/cublas_fortran_iso.o -lcublas -lcudart
 
