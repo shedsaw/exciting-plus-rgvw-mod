@@ -48,12 +48,12 @@ if (mpi_grid_root((/dim_k/))) then
   wprocrank=.true.
 endif
 
-call mpi_world_barrier
+!call mpi_world_barrier
 
-if(wprocrank) then
-write(*,*) 'wprocrank is ',wprocrank
-flush(6)
-endif
+!if(wprocrank) then
+!write(*,*) 'wprocrank is ',wprocrank
+!flush(6)
+!endif
 !write(*,*) 'Entered into genmegqblh_cublas.f90 and have allocated wftmp1, wftmp2, and wfir1'
 !flush(6)
 !endif
@@ -71,31 +71,31 @@ allocate(b1Batch(lmmaxapw*nufrmax*batch_count))
 allocate(b2Batch(lmmaxapw*nufrmax*batch_count))
 allocate(gntujuBatch(lmmaxapw*nufrmax*lmmaxapw*nufrmax*batch_count))
 
-if(wprocrank) then
-write(*,*) '  Allocated the b1Batch, b2Batch, and gntujuBatch arrays.'
-flush(6)
-endif
-call mpi_world_barrier
+!if(wprocrank) then
+!write(*,*) '  Allocated the b1Batch, b2Batch, and gntujuBatch arrays.'
+!flush(6)
+!endif
+!call mpi_world_barrier
 allocate(h_d_b1(batch_count))
 allocate(h_d_b2(batch_count))
 allocate(h_d_gntuju(batch_count))
 
-if(wprocrank) then
-write(*,*) '  Allocated the h_d_b1, h_d_b2, and h_d_gntuju arrays.'
-flush(6)
-endif
-call mpi_world_barrier
+!if(wprocrank) then
+!write(*,*) '  Allocated the h_d_b1, h_d_b2, and h_d_gntuju arrays.'
+!flush(6)
+!endif
+!call mpi_world_barrier
 b1Size = lmmaxapw*nufrmax*batch_count*sizeof_complex
 b2Size = b1Size
 gntujuSize = lmmaxapw*nufrmax*b1Size
 
-if(wprocrank) then
-  write(*,*) '  b1Size is ', b1Size
-  write(*,*) '  b2Size is ', b2Size
-  write(*,*) '  gntujuSize is ', gntujuSize
-  flush(6)
-endif
-call mpi_world_barrier
+!if(wprocrank) then
+!  write(*,*) '  b1Size is ', b1Size
+!  write(*,*) '  b2Size is ', b2Size
+!  write(*,*) '  gntujuSize is ', gntujuSize
+!  flush(6)
+!endif
+!call mpi_world_barrier
 !if (wprocrank) then
 !write(*,*) 'Allocated the local batch arrays and the device pointer arrays'
 !flush(6)
@@ -105,58 +105,62 @@ stat = cudaMalloc(h_d_b1(1), b1Size)
 stat = cudaMalloc(h_d_b2(1), b2Size)
 stat = cudaMalloc(h_d_gntuju(1), gntujuSize)
 
-if(wprocrank) then
-  write(*,*) '  cudaMalloced h_d_b1(1) with address  '
-  i = printValue( C_LOC(h_d_b1(1)) )
-  !address = C_LOC( h_d_b1(1) )
-  write(*,*) '  cudaMalloced h_d_b2(1) with address  '
-  i = printValue( C_LOC(h_d_b2(1)) )
-  !printValue( C_LOC(h_d_b2(1)) )
-  write(*,*) '  cudaMalloced h_d_gntuju(1) with address  '
-  i = printValue( C_LOC(h_d_gntuju(1)) )
+!if(wprocrank) then
+!  write(*,*) '  cudaMalloced h_d_b1(1) with address  '
+!  i = printValue( C_LOC(h_d_b1(1)) )
+!  !address = C_LOC( h_d_b1(1) )
+!  write(*,*) '  cudaMalloced h_d_b2(1) with address  '
+!  i = printValue( C_LOC(h_d_b2(1)) )
+!  !printValue( C_LOC(h_d_b2(1)) )
+!  write(*,*) '  cudaMalloced h_d_gntuju(1) with address  '
+!  i = printValue( C_LOC(h_d_gntuju(1)) )
   !printValue( C_LOC(h_d_gntuju(1)) )
-  flush(6)
-endif
-call mpi_world_barrier
-if(wprocrank) then
-  write(*,*) '  Before the loop to add the offset:'
-  do i=1,batch_count
-    write(*,*) ' ITERATION ',i
-    write(*,*) '    h_d_b1(i) = '
-    j = printValue( C_LOC(h_d_b1(i)) )
-    write(*,*) '    h_d_b2(i) = '
-    j = printValue( C_LOC(h_d_b2(i)) )
-    write(*,*) '    h_d_gntuju(i) = '
-    j = printValue( C_LOC(h_d_gntuju(i)) )
-  enddo
-  flush(6)
-endif
-call mpi_world_barrier
-do i=1,batch_count
+!  flush(6)
+!endif
+!call mpi_world_barrier
+!if(wprocrank) then
+!  write(*,*) '  Before the loop to add the offset:'
+!  do i=1,batch_count
+!    write(*,*) ' ITERATION ',i
+!    write(*,*) '    h_d_b1(i) = '
+!    j = printValue( C_LOC(h_d_b1(i)) )
+!    write(*,*) '    h_d_b2(i) = '
+!    j = printValue( C_LOC(h_d_b2(i)) )
+!    write(*,*) '    h_d_gntuju(i) = '
+!    j = printValue( C_LOC(h_d_gntuju(i)) )
+!  enddo
+!  flush(6)
+!endif
+!call mpi_world_barrier
+do i=2,batch_count
   !h_d_b1(i) = h_d_b1(i) + b1Size
   !h_d_b2(i) = h_d_b2(i) + b2Size
   !h_d_gntuju(i) = h_d_gntuju(i) + gntujuSize
+
+   h_d_b1(i) = h_d_b1(i-1)
+   h_d_b2(i) = h_d_b2(i-1)
+   h_d_gntuju(i) = h_d_gntuju(i-1)
 
    stat = addOffsetToPtr( C_LOC(h_d_b1(i)), b1Size )
    stat = addOffsetToPtr( C_LOC(h_d_b2(i)), b2Size )
    stat = addOffsetToPtr( C_LOC(h_d_gntuju(i)), gntujuSize )
 enddo
-call mpi_world_barrier
+!call mpi_world_barrier
 
-if(wprocrank) then
-  write(*,*) '  After the loop to add the offset:'
-  do i=1,batch_count
-    write(*,*) 'ITERATION ',i
-    write(*,*) '    h_d_b1(i) = '
-    j = printValue( C_LOC(h_d_b1(i)) )
-    write(*,*) '    h_d_b2(i) = '
-    j = printValue( C_LOC(h_d_b2(i)) )
-    write(*,*) '    h_d_gntuju(i) = '
-    j = printValue( C_LOC(h_d_gntuju(i)) )
-  enddo
-  flush(6)
-endif
-call mpi_world_barrier
+!if(wprocrank) then
+!  write(*,*) '  After the loop to add the offset:'
+!  do i=1,batch_count
+!    write(*,*) 'ITERATION ',i
+!    write(*,*) '    h_d_b1(i) = '
+!    j = printValue( C_LOC(h_d_b1(i)) )
+!    write(*,*) '    h_d_b2(i) = '
+!    j = printValue( C_LOC(h_d_b2(i)) )
+!    write(*,*) '    h_d_gntuju(i) = '
+!    j = printValue( C_LOC(h_d_gntuju(i)) )
+!  enddo
+!  flush(6)
+!endif
+!call mpi_world_barrier
 !if (wprocrank) then
 !write(*,*) 'cudaMalloced the device ptr arrays'
 !flush(6)
@@ -173,32 +177,32 @@ do ig=1,ngq(iq)
   enddo
 enddo
 gntujuSize = lmmaxapw*nufrmax*b1Size
-call mpi_world_barrier
-if(wprocrank) then
-  write(*,*) ' Copied the gntuju batches into gntujuBatch array.'
-  flush(6)
-endif
-call mpi_world_barrier
+!call mpi_world_barrier
+!if(wprocrank) then
+!  write(*,*) ' Copied the gntuju batches into gntujuBatch array.'
+!  flush(6)
+!endif
+!call mpi_world_barrier
 bytes = batch_count*sizeof_ptr
 
 stat = cudaMalloc(d_b1, bytes)
 stat = cudaMalloc(d_b2, bytes)
 stat = cudaMalloc(d_gntuju, bytes)
 
-if(wprocrank) then
-  write(*,*) ' cudaMalloced the device pointer arrays.'
-  flush(6)
-endif
-call mpi_world_barrier
+!if(wprocrank) then
+!  write(*,*) ' cudaMalloced the device pointer arrays.'
+!  flush(6)
+!endif
+!call mpi_world_barrier
 stat = cudaMemcpy(d_b1, C_LOC(h_d_b1(1)),bytes,cudaMemcpyHostToDevice); 
 stat = cudaMemcpy(d_b2, C_LOC(h_d_b2(1)),bytes,cudaMemcpyHostToDevice); 
 stat = cudaMemcpy(d_gntuju, C_LOC(h_d_gntuju(1)),bytes,cudaMemcpyHostToDevice); 
 
-if(wprocrank) then
-  write(*,*) ' cudaMemcpyed the device pointer arrays over th GPU'
-  flush(6)
-endif
-call mpi_world_barrier
+!if(wprocrank) then
+!  write(*,*) ' cudaMemcpyed the device pointer arrays over th GPU'
+!  flush(6)
+!endif
+!call mpi_world_barrier
 !if (wprocrank) then
 !write(*,*) 'cudaMalloced the arrays and copied over the batch array ptrs'
 !flush(6)
@@ -209,12 +213,12 @@ stat = cudaStreamCreate(stream)
 ! Transfer gntujuBatch array once.
 stat = cudaMemcpy(h_d_gntuju(1), C_LOC(gntujuBatch(1)), gntujuSize, cudaMemcpyHostToDevice)
 
-if(wprocrank) then
-  write(*,*) ' Copied the gntujuBatch array over to GPU.'
-  write(*,*) ' sent over gntujuSize bytes of data: ', gntujuSize
-  flush(6)
-endif
-call mpi_world_barrier
+!if(wprocrank) then
+!  write(*,*) ' Copied the gntujuBatch array over to GPU.'
+!  write(*,*) ' sent over gntujuSize bytes of data: ', gntujuSize
+!  flush(6)
+!endif
+!call mpi_world_barrier
 !if (wprocrank) then
 !write(*,*) 'ngkmax=',ngkmax
 !write(*,*) 'nstsv=',nstsv
