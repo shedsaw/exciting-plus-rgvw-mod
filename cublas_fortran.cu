@@ -58,3 +58,9 @@ extern "C" void f_addOffsetToPtr(size_t* array, size_t offset)
 {
     array[0] = array[0] + offset;
 }
+
+extern "C" void f_printValue(void** address)
+{
+    //printf(" Write something out!!! PLEASE!\n\n\n");
+    printf("     value is %zu\n", ( (size_t*)(*address) ) );
+}

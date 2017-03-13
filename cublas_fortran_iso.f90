@@ -146,6 +146,11 @@ module cublas_f
         integer(C_SIZE_T), value :: offset
     end function
 
+    integer(C_INT) function printValue(address) BIND(C, NAME='f_printValue')
+        use ISO_C_BINDING
+        type(C_PTR) :: address
+    end function
+
   END INTERFACE
 
 end module cublas_f
