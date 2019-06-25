@@ -16,6 +16,9 @@ character*8 c1,c2
 logical exist
 integer*8, allocatable :: hw_values(:)
 
+integer i1, j, j1, n, n1
+complex(8), allocatable :: uscrnwan(:,:)
+
 call init0
 call init1
 if (.not.mpi_grid_in()) return
@@ -155,6 +158,7 @@ call mpi_grid_reduce(hw_values(0),1+papi_ncounters)
 if (wproc1) call papi_report(151,hw_values,"pt_vscrn")
 deallocate(hw_values)
 
+#ifdef _HDF5_
 if (mpi_grid_side(dims=(/dim_k/)).and.nwloc.gt.0) then
   write(fu4,'("u4_",I4.4,".hdf5")')mpi_grid_dim_pos(dim_k)
   call hdf5_create_file(trim(fu4))
@@ -194,40 +198,55 @@ if (mpi_grid_side(dims=(/dim_k/)).and.nwloc.gt.0) then
     enddo
   enddo
 endif
+#endif
+
 if (wproc1) then
-!  write(151,*)
-!  write(151,'("Number of Wannier transitions : ",I6)')megqwantran%nwt
-!  write(151,'("Number of Wannier translations : ",I6)')megqwantran%ntr
-!  write(151,*)
-!  write(151,'("n   n''   Re,Im U_{n,n''T=0} values for w=",2G18.10)')dreal(lr_w(1)),&
-!    dimag(lr_w(1))
-!  do i=1,megqwantran%nwan
-!    n=megqwantran%iwan(i)
-!    j=megqwantran%iwtidx(n,n,0,0,0)
-!    do i1=1,megqwantran%nwan
-!      n1=megqwantran%iwan(i1)
-!      j1=megqwantran%iwtidx(n1,n1,0,0,0)
-!      if (j.ne.0.and.j1.ne.0) then
-!        write(151,'(2I4,2G18.10)')n,n1,dreal(u4(
-!      else
-!        write(151,'("wrong index")')
-!        write(151,'(" j, j1 : ",2I6)')j,j1
-!      endif
-!        
-!  enddo
-!  write(151,'("screened U_{n,n''T}(w=0)")')    
-!  write(151,'(65("-"))')
-!    call printwanntrans(151,uscrnwan(1,1))
-!  call timestamp(151)
-!  write(151,*)
-!  write(151,'("screened J_{n,n''T}(w=0)")')    
-!  write(151,'(65("-"))')
-!    call printwanntrans(151,jscrnwan(1,1))
+   
+#ifndef _HDF5_
+  allocate( uscrnwan( megqwantran%nwan, megqwantran%nwan ) )
+
+  write(151,*)
+  write(151,'("Number of Wannier transitions : ",I6)')megqwantran%nwt
+  write(151,'("Number of Wannier translations : ",I6)')megqwantran%ntr
+  write(151,*)
+  write(151,'("n   n''   Re,Im U_{n,n''T=0} values for w=",2G18.10)') &
+            dreal(lr_w(1)), dimag(lr_w(1))
+  do i=1,megqwantran%nwan
+    n=megqwantran%iwan(i)
+    j=megqwantran%iwtidx(n,n,0,0,0)
+    do i1=1,megqwantran%nwan
+      n1=megqwantran%iwan(i1)
+      j1=megqwantran%iwtidx(n1,n1,0,0,0)
+      if (j.ne.0.and.j1.ne.0) then
+         write(151,'(2I4,2G18.10)')n,n1, &
+               dreal(u4(j,j1,1,1)), dimag(u4(j,j1,1,1)) 
+      else
+        write(151,'("wrong index")')
+        write(151,'(" j, j1 : ",2I6)')j,j1
+      endif
+
+      uscrnwan(i,i1) = u4(j,j1,1,1) * ha2ev
+
+   enddo
+  enddo
+  write(151,'("screened U_{n,n''T}(w=0) in eV")')    
+  write(151,'(65("-"))')
+  call printwanntrans(151,uscrnwan(1,1))
+  !call timestamp(151)
+  !write(151,*)
+  !write(151,'("screened J_{n,n''T}(w=0) in eV")')    
+  !write(151,'(65("-"))')
+  !call printwanntrans(151,jscrnwan(1,1))
+
+  deallocate( uscrnwan )
+#endif
+
   call timestamp(151)
   write(151,*) 
   write(151,'("Done.")')
   close(151)
 endif
+
 deallocate(lr_w)
 deallocate(u4)
 return
