@@ -26,8 +26,13 @@
 *.a
 *.lib
 
+# Listing files
+*.lst
+
 # Executables
 *.exe
 *.out
 *.app
 elk
+elk-cpu
+elk-gpu
