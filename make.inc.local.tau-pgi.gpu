@@ -1,0 +1,60 @@
+MAKE = make
+F90 = ${TAU}/x86_64/bin/tau_f90.sh
+CXX = ${TAU}/x86_64/bin/tau_cxx.sh
+CC  = ${TAU}/x86_64/bin/tau_cc.sh
+CPP_OPTS = -D_MPI_
+
+# Profiling
+F90_OPTS = -pg -gopt -O3 -Minform=warn -Mpreprocess $(CPP_OPTS) 
+F90_LINK_OPTS = $(F90_OPTS)
+
+# Use reference BLAS and LAPACK included with PGI compilers
+PGILAPACK_PATH = ${PGI}/linux86-64-nollvm/19.10/lib
+LAPACK_LIB     = -L$(PGILAPACK_PATH) -lblas -llapack
+
+# Use ATLAS
+#ATLAS_PATH = /home/wphan/libatlas
+#LAPACK_LIB = -L$(ATLAS_PATH)/lib -llapack -lf77blas -lcblas -latlas
+
+# Use MKL (don't forget to enable OpenMP)
+#MKL_PATH   = /home/wphan/intel/mkl
+#LAPACK_LIB = -mp -L$(MKL_PATH)/lib/intel64 \
+#              -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lpthread -lstdc++ -lm
+
+# === compile with HDF5 support ===
+#HDF5_PATH = /usr/lib/x86_64-linux-gnu/hdf5/serial
+#HDF5_INC  = -I$(HDF5_PATH)/include
+#HDF5_LIB  = -L$(HDF5_PATH) -lhdf5_fortran -lhdf5_cpp -lhdf5_hl -lhdf5 -ldl
+#HDF5_OPTS = -D_HDF5_ $(HDF5_INC)
+#CPP_OPTS := $(CPP_OPTS) $(HDF5_OPTS)
+
+# ==- compile with libXC support ===
+#CPP_OPTS := $(CPP_OPTS) -D_LIBXC_
+#XC_LIB =
+
+# ==- compile with NFFT support ===
+#CPP_OPTS := $(CPP_OPTS) -D_NFFT_
+#NFFT_INC = -I$(HOME)/local/include
+#NFFT_LIB = $(HOME)/local/lib/libnfft3.a $(HOME)/local/lib/libfftw3.a
+
+# === compile with Madness API ===
+#CPP_OPTS := $(CPP_OPTS) -D_MAD_
+#MADNESS_INC = -I$(HOME)/local/include
+#MADNESS_LIB = -L$(HOME)/local/lib/ -lMADmra -lMADlinalg -lMADtensor -lMADmisc -lMADmuparser -lMADtinyxml -lMADworld -lmpichcxx -lstdc++
+
+# CUDA additions
+CUDA_PATH = /usr/local/cuda
+CUDA_LIB  = -L$(CUDA_PATH)/lib64 -lcublas -lcudart -lcusolver
+CPP_OPTS += -I$(CUDA_PATH)/include
+NVCC = $(CUDA_PATH)/bin/nvcc
+CUDA_WRAP = ./addons/expigqr/cublas_fortran.o \
+            ./addons/expigqr/cublas_fortran_iso.o
+
+# === collect all libraries under one name ===
+#LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(XC_LIB) $(NFFT_LIB) $(MADNESS_LIB)
+LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(CUDA_WRAP) $(CUDA_LIB) $(TAU_MPI_FLIBS) $(TAU_LIBS) $(TAU_CXXLIBS)
+
+# Serial compilers (mainly for utilities)
+F90SERIAL = ${TAU}/x86_64/bin/tau_f90.sh
+F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_/} -optNoMpi
+LIBS_SERIAL = $(LAPACK_LIB) $(HDF5_LIB) $(TAU_LIBS) $(TAU_CXXLIBS)
