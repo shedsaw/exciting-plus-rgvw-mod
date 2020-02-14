@@ -32,9 +32,9 @@ data chi0kmax/100.0d0/
 real(8) chi0kmaxa
 data chi0kmaxa/100.0d0/
 real(8) chi0kmaxb
-data chi0kmaxa/100.0d0/
+data chi0kmaxb/100.0d0/
 real(8) chi0kmaxc
-data chi0kmaxa/100.0d0/
+data chi0kmaxc/100.0d0/
 integer chi0kmaxan
 data chi0kmaxan/0/
 integer chi0kmaxbn
