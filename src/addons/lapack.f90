@@ -12,9 +12,14 @@ integer ,allocatable :: ipiv(:)
 !nb=ilaenv(1,'zgetri','U',ndim,-1,-1,-1)
 !lwork=ndim*nb
 
-!-- IBM ESSL fix
-CALL zgetri( ndim, mtrx, ndim, dummy, lwork, -1, info)
-!--
+!--begin IBM ESSL fix
+INTEGER :: dummy
+REAL(KIND=KIND(1.D0)) :: query
+
+! Query workspace
+CALL zgetri( ndim, mtrx, ndim, dummy, query, -1, info)
+lwork = CEILING(query)
+!--end IBM ESSL fix
 
 allocate(work(2*lwork),ipiv(ndim))
 call zgetrf(ndim,ndim,mtrx,ndim,ipiv,info)
@@ -42,10 +47,10 @@ integer lwork,info
 integer, allocatable :: ipiv(:)
 real(8), allocatable :: work(:)
 
-!-- IBM ESSL fix
+!--begin IBM ESSL fix
 INTEGER :: dummy
 REAL(KIND=KIND(1.D0)) :: query
-!--
+!--end IBM ESSL fix
 
 !allocate(ipiv(n))
 !lwork=-1
@@ -66,7 +71,8 @@ REAL(KIND=KIND(1.D0)) :: query
 !endif
 !deallocate(ipiv,work)
 
-!-- IBM ESSL fix
+!--begin IBM ESSL fix
+
 ! For some reason, ESSL doesn't provide *sytri
 ! Use *getrf and *getri instead
 
@@ -98,7 +104,7 @@ IF ( info /= 0 ) THEN
   CALL pstop
 END IF
 
-!--
+!--end IBM ESSL fix
 return
 end subroutine invdsy
 
@@ -113,9 +119,15 @@ real*8, allocatable :: work(:),rwork(:)
 !integer, external :: ilaenv
 !nb=ilaenv(1,'ZHETRD','U',ndim,-1,-1,-1)
 !lwork=(nb+1)*ndim
-!-- IBM ESSL fix
-CALL zheev( 'V', 'U', ndim, mtrx, evalue, lwork, -1, dummy, inf )
-!--
+
+!--begin IBM ESSL fix
+INTEGER :: dummy2
+REAL(KIND=KIND(1.D0)) :: query, dummy1
+
+! Query workspace
+CALL zheev( 'V', 'U', ndim, mtrx, ndim, dummy1, query, -1, dummy2, inf )
+lwork = CEILING(query)
+!--end IBM ESSL fix
 
 allocate(work(lwork*2))
 allocate(rwork(3*ndim+2))
@@ -166,9 +178,14 @@ complex(8), allocatable :: z1(:,:)
 !nb=ilaenv(1,'ZHETRD','U',ndim,-1,-1,-1)
 !lwork=(nb+1)*ndim
 
-!-- IBM ESSL fix
-CALL zheev( 'V', 'U', ndim, mtrx, ev1, lwork, -1, dummy, info )
-!--
+!--begin IBM ESSL fix
+INTEGER :: dummy2
+REAL(KIND=KIND(1.D0)) :: query, dummy1
+
+! Query workspace
+CALL zheev( 'V', 'U', ndim, mtrx, ndim, dummy1, query, -1, dummy2, info )
+lwork = CEILING(query)
+!--end IBM ESSL fix
 
 allocate(z1(ndim,ndim))
 allocate(work(lwork*2))
@@ -261,9 +278,9 @@ real*8, allocatable :: rwork(:)
 complex(8), allocatable :: work(:)
 complex(8), allocatable :: evec(:,:)
 
-!-- IBM ESSL fix
+!--begin IBM ESSL fix
 !integer, external :: ilaenv
-!--
+!--end IBM ESSL fix
 
 lwork=-1
 call zgeev('N','V',ndim,mtrx,ndim,evalue,evec,ndim,evec,ndim,zt1,lwork,rwork,inf)
@@ -291,7 +308,7 @@ complex(8), intent(inout) :: b(n,n)
 real(8), intent(out) :: eval(nv)
 complex(8), intent(out) :: evec(ld,nv)
 !
-integer m,info,i,nb,lwork, dummy1, dummy2
+integer m,info,i,nb,lwork
 real(8) vl,vu
 integer, allocatable :: iwork(:)
 integer, allocatable :: ifail(:)
@@ -303,10 +320,15 @@ complex(8), allocatable :: work(:)
 !nb=ilaenv(1,'ZHETRD','U',n,-1,-1,-1)
 !lwork=(nb+1)*n
 
-!-- IBM ESSL fix
+!--begin IBM ESSL fix
+INTEGER :: dummy1, dummy2
+REAL(KIND=KIND(1.D0)) :: query
+
+! Query workspace
 CALL zhegvx( 1, 'V', 'I', 'U', n, a, n, b, n, vl, vu, 1, nv, etol, m, w, evec,&
-             ld, lwork, -1, dummy1, dummy2, ifail, info )
-!--
+             ld, query, -1, dummy1, dummy2, ifail, info )
+lwork = CEILING(query)
+!--end IBM ESSL fix
 
 allocate(iwork(5*n))
 allocate(ifail(n))

@@ -17,7 +17,7 @@ LAPACK_LIB = -L${OLCF_ESSL_ROOT}/lib64 -lessl
 
 # ==- compile with libXC support ===
 #CPP_OPTS := $(CPP_OPTS) -D_LIBXC_
-XC_LIB =
+#XC_LIB =
 
 # ==- compile with NFFT support ===
 #CPP_OPTS := $(CPP_OPTS) -D_NFFT_
@@ -30,5 +30,6 @@ XC_LIB =
 #MADNESS_LIB = -L$(HOME)/local/lib/ -lMADmra -lMADlinalg -lMADtensor -lMADmisc -lMADmuparser -lMADtinyxml -lMADworld -lmpichcxx -lstdc++
 
 # === collect all libraries under one name ===
-LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(XC_LIB) $(NFFT_LIB) $(MADNESS_LIB)
+LIBS = $(LAPACK_LIB) $(HDF5_LIB)
+
 

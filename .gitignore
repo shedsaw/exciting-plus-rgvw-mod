@@ -29,6 +29,14 @@
 # Listing files
 *.lst
 
+# TAU intermediate files
+*.tau.inc~
+*.gomp.f90
+*.opari.f90
+*.inst.f90
+*.pp.f90
+*.pdb
+
 # Executables
 *.exe
 *.out
@@ -36,3 +44,25 @@
 elk
 elk-cpu
 elk-gpu
+spacegroup
+pdos
+bndchr
+
+# Outputs
+*.OUT
+crystal.xsf
+crystal.ascii
+
+# 811 dosrlm
+tdos.dat
+idos.dat
+
+# 822 bandrlm
+bands.dat
+bandlines.dat
+bands_wann.dat
+sic_bands.dat
+sic_bands_wann.dat
+sic_bands_wann_h0.dat
+sic_wann_h0_diag.dat
+

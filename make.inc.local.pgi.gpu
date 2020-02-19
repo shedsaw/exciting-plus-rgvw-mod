@@ -1,0 +1,73 @@
+MAKE = make
+F90 = ${PGI}/linux86-64-nollvm/2019/mpi/openmpi-3.1.3/bin/mpif90
+CXX = ${PGI}/linux86-64-nollvm/2019/mpi/openmpi-3.1.3/bin/mpicxx
+CC  = ${PGI}/linux86-64-nollvm/2019/mpi/openmpi-3.1.3/bin/mpicc
+
+
+# Debugging
+#CPP_OPTS = -D_MPI_ -mp
+#F90_OPTS = -g -Minform=warn -Mpreprocess $(CPP_OPTS) 
+#F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_ -mp/}
+#F90_LINK_OPTS = $(F90_OPTS) -fpic
+
+# Debugging with extra checks
+# (Don't forget to enable core dump generation using `ulimit -c unlimited`)
+#CPP_OPTS = -D_MPI_ -mp
+#F90_OPTS = -g -Minform=warn -Mbounds -traceback -Mpreprocess $(CPP_OPTS)
+#F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_ -mp/}
+#F90_LINK_OPTS = $(F90_OPTS) -fpic
+
+# Optimized build
+#CPP_OPTS = -D_MPI_ -mp
+#F90_OPTS = -fastsse -Munroll -Mnoinline -Minform=warn -Mpreprocess $(CPP_OPTS) 
+#F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_ -mp/}
+#F90_LINK_OPTS = $(F90_OPTS) -fPIC
+
+# Profiling
+# (-Mpfi is incompatible with -mp and -fPIC)
+CPP_OPTS = -D_MPI_
+F90_OPTS = -Mpfi -Mipa=fast -Mprof -fastsse -Munroll -Mnoinline -Minform=warn -Mpreprocess $(CPP_OPTS)
+F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_/}
+F90_LINK_OPTS = $(F90_OPTS) -Bstatic_pgi
+
+
+# Use reference BLAS and LAPACK included with PGI compilers
+PGILAPACK_PATH = ${PGI}/linux86-64-nollvm/19.10/lib
+LAPACK_LIB     = -L$(PGILAPACK_PATH) -lblas -llapack
+
+# === compile with HDF5 support ===
+#HDF5_PATH = /usr/lib/x86_64-linux-gnu/hdf5/serial
+#HDF5_INC  = -I$(HDF5_PATH)/include
+#HDF5_LIB  = -L$(HDF5_PATH) -lhdf5_fortran -lhdf5_cpp -lhdf5_hl -lhdf5 -ldl
+#HDF5_OPTS = -D_HDF5_ $(HDF5_INC)
+#CPP_OPTS := $(CPP_OPTS) $(HDF5_OPTS)
+
+# ==- compile with libXC support ===
+#CPP_OPTS := $(CPP_OPTS) -D_LIBXC_
+#XC_LIB =
+
+# ==- compile with NFFT support ===
+#CPP_OPTS := $(CPP_OPTS) -D_NFFT_
+#NFFT_INC = -I$(HOME)/local/include
+#NFFT_LIB = $(HOME)/local/lib/libnfft3.a $(HOME)/local/lib/libfftw3.a
+
+# === compile with Madness API ===
+#CPP_OPTS := $(CPP_OPTS) -D_MAD_
+#MADNESS_INC = -I$(HOME)/local/include
+#MADNESS_LIB = -L$(HOME)/local/lib/ -lMADmra -lMADlinalg -lMADtensor -lMADmisc -lMADmuparser -lMADtinyxml -lMADworld -lmpichcxx -lstdc++
+
+# CUDA additions
+CUDA_PATH = /usr/local/cuda
+CUDA_LIB  = -L$(CUDA_PATH)/lib64 -lcublas -lcudart -lcusolver
+CPP_OPTS += -I$(CUDA_PATH)/include
+NVCC = $(CUDA_PATH)/bin/nvcc
+CUDA_WRAP = ./addons/expigqr/cublas_fortran.o \
+            ./addons/expigqr/cublas_fortran_iso.o
+
+# === collect all libraries under one name ===
+#LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(XC_LIB) $(NFFT_LIB) $(MADNESS_LIB)
+LIBS = $(CUDA_WRAP) $(LAPACK_LIB) $(CUDA_LIB)
+
+# Serial compilers (mainly for utilities)
+F90SERIAL = ${PGI}/linux86-64-nollvm/2019/bin/pgfortran
+LIBS_SERIAL = $(LAPACK_LIB) $(HDF5_LIB)
