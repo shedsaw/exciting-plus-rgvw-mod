@@ -2,17 +2,47 @@
 
 # Compilers
 export MAKE=make
-export F90=mpif90
+export F90=mpifort
 export CUDA_PATH=/usr/local/cuda
 export NVCC=$CUDA_PATH/bin/nvcc
+
+# Pick your desired compiler here
+# Options: ibm (default), pgi, gcc, llvm
+COMPILER=ibm
+
+# Copy make.inc
+cp make.inc.summit.${COMPILER}.cpu make.inc
+
+# Switch compiler module
+case ${COMPILER} in
+    ibm)
+	module swap xl
+	;;
+    pgi)
+	module swap pgi
+	;;
+    gcc)
+	module swap gcc
+	;;
+    llvm)
+	module swap llvm
+	;;
+    *)
+	echo "Unsupported compiler"
+	exit 1
+esac
+
+# Load modules
+module load essl
+module load hdf5
 
 # Clean up
 make clean
 rm *.o *.mod
-rm bin/elk-cpu bin/elk-gpu
+rm src/elk-cpu bin/elk-cpu
+#rm src/elk-gpu bin/elk-gpu
 
 # Make the binary
-cp make.inc.summit.ibm.cpu make.inc
 make
 
 # CPU-only version
@@ -44,7 +74,7 @@ mv src/elk src/elk-cpu
 # mv src/elk src/elk-gpu
 
 # Keep the two different versions
-# make install
+# make install # Feature isn't cherry-picked yet from cuda-hydra branch
 [[ -d bin ]] || mkdir bin
 [[ -e bin/elk ]] || rm bin/elk
 cd bin

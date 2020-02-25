@@ -1,33 +1,33 @@
 MAKE = make
 F90 = mpifort
-F90_SERIAL = xlf
+F90_SERIAL = gfortran
 CXX = mpic++
 CC = mpicc
 
 # Debugging
-#CPP_OPTS = -qpreprocess -WF,-qfpp,-D_MPI_
-#F90_OPTS = -g $(CPP_OPTS) -qsuppress=1501-510 
-#F90_OPTS_SERIAL = ${F90_OPTS/-WF,-qfpp,-D_MPI_/}
-#F90_LINK_OPTS=$(F90_OPTS)
+#CPP_OPTS = -cpp -D_MPI_
+#F90_OPTS = -g -Wall $(CPP_OPTS) -fopenmp
+#F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_ -fopenmp/}
+#F90_LINK_OPTS=$(F90_OPTS) -fPIC
 
 # Debugging with extra checks
 # (Don't forget to enable core dump generation using `ulimit -c unlimited`)
-#CPP_OPTS = -qpreprocess -WF,-qfpp,-D_MPI_
-#F90_OPTS = -g -O0 -qsource -qcheck -qsigtrap -qstackprotect=all -qlinedebug -qfullpath -qtbtable=full $(CPP_OPTS) -qflag=w:w -qsuppress=1501-510
-#F90_OPTS_SERIAL = ${F90_OPTS/-WF,-qfpp,-D_MPI_/}
-#F90_LINK_OPTS=$(F90_OPTS)
+#CPP_OPTS = -cpp -D_MPI_
+#F90_OPTS = -O0 -Wall -g -fbounds-check -fdump-core -fbacktrace $(CPP_OPTS) -fopenmp
+#F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_ -fopenmp/}
+#F90_LINK_OPTS=$(F90_OPTS) -fPIC
 
 # Optimized build
-CPP_OPTS = -qpreprocess -WF,-qfpp,-D_MPI_
-F90_OPTS = -g2 -Ofast -qipa -qarch=pwr9 -qtune=pwr9:smt4 -qunroll -qessl $(CPP_OPTS) -qsmp=omp:auto -qsuppress=1501-510
-F90_OPTS_SERIAL = ${F90_OPTS/-WF,-qfpp,-D_MPI_ -qsmp=omp:auto/}
-F90_LINK_OPTS=$(F90_OPTS) -qpic
+CPP_OPTS = -cpp -D_MPI_
+F90_OPTS = -Ofast -gopt $(CPP_OPTS) -fopenmp
+F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_ -fopenmp/}
+F90_LINK_OPTS=$(F90_OPTS) -fPIC
 
 # Profiling
-#CPP_OPTS = -qpreprocess -WF,-qfpp,-D_MPI_
-#F90_OPTS = -pg -g2 -Ofast -qipa -qarch=pwr9 -qtune=pwr9:smt4 -qunroll -qessl $(CPP_OPTS) -qsmp=omp:auto -qsuppress=1501-510
-#F90_OPTS_SERIAL = ${F90_OPTS/-WF,-qfpp,-D_MPI_ -qsmp=omp:auto/}
-#F90_LINK_OPTS=$(F90_OPTS) -qpic
+#CPP_OPTS = -cpp -D_MPI_
+#F90_OPTS = -pg -Ofast $(CPP_OPTS) -fopenmp
+#F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_ -fopenmp/}
+#F90_LINK_OPTS=$(F90_OPTS) -fPIC
 
 # Use IBM ESSL
 LAPACK_LIB = -L${OLCF_ESSL_ROOT}/lib64 -lesslsmp
@@ -35,7 +35,7 @@ LAPACK_LIB = -L${OLCF_ESSL_ROOT}/lib64 -lesslsmp
 # === compile with HDF5 support ===
 HDF5_INC = -I${OLCF_HDF5_ROOT}/include
 HDF5_LIB = -L${OLCF_HDF5_ROOT} -lhdf5_fortran -lhdf5_cpp -lhdf5_hl -lhdf5 -ldl
-HDF5_OPTS = -WF,-qfpp,-D_HDF5_ $(HDF5_INC)
+HDF5_OPTS = -D_HDF5_ $(HDF5_INC)
 CPP_OPTS := $(CPP_OPTS) $(HDF5_OPTS)
 
 # ==- compile with libXC support ===
