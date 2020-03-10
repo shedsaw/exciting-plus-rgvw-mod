@@ -1,20 +1,20 @@
 MAKE = make
 F90 = mpifort
-F90_SERIAL = xlf
+F90SERIAL = xlf
 CXX = mpic++
 CC = mpicc
 
 # Debugging
 #CPP_OPTS = -qpreprocess -WF,-qfpp,-D_MPI_
-#F90_OPTS = -g $(CPP_OPTS) -qsuppress=1501-510 
-#F90_OPTS_SERIAL = ${F90_OPTS/-WF,-qfpp,-D_MPI_/}
+#F90_OPTS = -g $(CPP_OPTS) -qsmp=omp:auto -qsuppress=1501-510
+#F90_OPTS_SERIAL = ${F90_OPTS/-WF,-qfpp,-D_MPI_ -qsmp=omp:auto/}
 #F90_LINK_OPTS=$(F90_OPTS)
 
 # Debugging with extra checks
 # (Don't forget to enable core dump generation using `ulimit -c unlimited`)
 #CPP_OPTS = -qpreprocess -WF,-qfpp,-D_MPI_
-#F90_OPTS = -g -O0 -qsource -qcheck -qsigtrap -qstackprotect=all -qlinedebug -qfullpath -qtbtable=full $(CPP_OPTS) -qflag=w:w -qsuppress=1501-510
-#F90_OPTS_SERIAL = ${F90_OPTS/-WF,-qfpp,-D_MPI_/}
+#F90_OPTS = -g -O0 -qsource -qcheck -qsigtrap -qstackprotect=all -qlinedebug -qfullpath -qtbtable=full $(CPP_OPTS) -qsmp=omp:auto -qflag=w:w -qsuppress=1501-510
+#F90_OPTS_SERIAL = ${F90_OPTS/-WF,-qfpp,-D_MPI_ -qsmp=omp:auto/}
 #F90_LINK_OPTS=$(F90_OPTS)
 
 # Optimized build
@@ -30,7 +30,7 @@ F90_LINK_OPTS=$(F90_OPTS) -qpic
 #F90_LINK_OPTS=$(F90_OPTS) -qpic
 
 # Use IBM ESSL
-LAPACK_LIB = -L${OLCF_ESSL_ROOT}/lib64 -lesslsmp
+LAPACK_LIB = -L${OLCF_ESSL_ROOT}/lib64 -lessl
 
 # === compile with HDF5 support ===
 HDF5_INC = -I${OLCF_HDF5_ROOT}/include

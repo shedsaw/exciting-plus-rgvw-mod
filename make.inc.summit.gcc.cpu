@@ -1,6 +1,6 @@
 MAKE = make
 F90 = mpifort
-F90_SERIAL = gfortran
+F90SERIAL = gfortran
 CXX = mpic++
 CC = mpicc
 
@@ -30,7 +30,8 @@ F90_LINK_OPTS=$(F90_OPTS) -fPIC
 #F90_LINK_OPTS=$(F90_OPTS) -fPIC
 
 # Use IBM ESSL
-LAPACK_LIB = -L${OLCF_ESSL_ROOT}/lib64 -lesslsmp
+# Make sure to source summit-xlpaths.sh
+LAPACK_LIB = -L${OLCF_ESSL_ROOT}/lib64 -lessl -L${OLCF_XLF_ROOT}/lib -lxlf90_r
 
 # === compile with HDF5 support ===
 HDF5_INC = -I${OLCF_HDF5_ROOT}/include

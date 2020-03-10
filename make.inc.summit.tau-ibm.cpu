@@ -1,0 +1,45 @@
+MAKE = make
+F90 = ${TAU_DIR}/bin/tau_f90.sh -optMpi
+F90SERIAL = ${TAU_DIR}/bin/tau_f90.sh -T serial
+CXX = ${TAU_DIR}/bin/tau_cxx.sh -optMpi
+CC  = ${TAU_DIR}/bin/tau_cc.sh -optMpi
+
+# This is where mpi.mod resides
+MPIMOD_PATH = ${OLCF_SPECTRUM_MPI_ROOT}/lib/XL
+
+# This is where GCC's OpenMP libraries reside
+# Make sure to source summit-gccpaths.sh
+GCCOMP_PATH = ${OLCF_GCC_ROOT}/lib64
+
+# Profiling
+CPP_OPTS = -qpreprocess -I${MPIMOD_PATH} -WF,-qfpp,-D_MPI_
+F90_OPTS = -pg -g2 -Ofast -qipa -qarch=pwr9 -qtune=pwr9:smt4 -qunroll -qessl $(CPP_OPTS) -qsmp=omp:auto -qsuppress=1501-510
+F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -WF,-qfpp,-D_MPI_ -qsmp=omp:auto/}
+F90_LINK_OPTS=$(F90_OPTS) -qpic
+
+# Use IBM ESSL
+LAPACK_LIB = -L${OLCF_ESSL_ROOT}/lib64 -lessl
+
+# === compile with HDF5 support ===
+HDF5_INC = -I${OLCF_HDF5_ROOT}/include
+HDF5_LIB = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5_cpp -lhdf5_hl -lhdf5 -ldl
+HDF5_OPTS = -D_HDF5_ $(HDF5_INC)
+CPP_OPTS := $(CPP_OPTS) $(HDF5_OPTS)
+
+# ==- compile with libXC support ===
+#CPP_OPTS := $(CPP_OPTS) -D_LIBXC_
+#XC_LIB =
+
+# ==- compile with NFFT support ===
+#CPP_OPTS := $(CPP_OPTS) -D_NFFT_
+#NFFT_INC = -I$(HOME)/local/include
+#NFFT_LIB = $(HOME)/local/lib/libnfft3.a $(HOME)/local/lib/libfftw3.a
+
+# === compile with Madness API ===
+#CPP_OPTS := $(CPP_OPTS) -D_MAD_
+#MADNESS_INC = -I$(HOME)/local/include
+#MADNESS_LIB = -L$(HOME)/local/lib/ -lMADmra -lMADlinalg -lMADtensor -lMADmisc -lMADmuparser -lMADtinyxml -lMADworld -lmpichcxx -lstdc++
+
+# === collect all libraries under one name ===
+LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(TAU_MPI_FLIBS) $(TAU_LIBS) $(TAU_CXXLIBS)
+LIBS_SERIAL = $(LAPACK_LIB) $(HDF5_LIB) $(TAU_LIBS) $(TAU_CXXLIBS)

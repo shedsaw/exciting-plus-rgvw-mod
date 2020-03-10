@@ -36,7 +36,7 @@ SRC_modules = ./addons/mod_mpi_grid.f90 \
               ./addons/mod_ws.f90 \
               ./addons/mod_rs.f90 \
               ./addons/mod_libapw.f90
-              
+
 OBJ_modules = $(SRC_modules:.f90=.o)
 SRC = $(shell find . -name \*.f90)
 OBJ = $(SRC:.f90=.o)
@@ -59,7 +59,7 @@ EXE = elk
 #-------------------------------------------------------------------------------
 all: gensrc extras elk
 
-serial: F90_OPTS:=$(subst -D_MPI_,,$(F90_OPTS)) 
+serial: F90_OPTS:=$(F90_OPTS_SERIAL)
 serial: gensrc elk lib
 
 gensrc:
@@ -84,7 +84,7 @@ lib:
 
 modclean:
 	rm $(OBJ_modules)
-	
+
 clean:
 	find . -name \*.o -exec rm {} \;
 	find . -name \*.mod -exec rm {} \;
