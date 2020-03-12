@@ -17,11 +17,17 @@ CC = mpicc
 #F90_OPTS_SERIAL = ${F90_OPTS/-WF,-qfpp,-D_MPI_ -qsmp=omp:auto/}
 #F90_LINK_OPTS=$(F90_OPTS)
 
-# Optimized build
+# Optimization level 2, with automatic ESSL, automatic OpenMP, and interprocedural analyzer
 CPP_OPTS = -qpreprocess -WF,-qfpp,-D_MPI_
-F90_OPTS = -g2 -Ofast -qipa -qarch=pwr9 -qtune=pwr9:smt4 -qunroll -qessl $(CPP_OPTS) -qsmp=omp:auto -qsuppress=1501-510
-F90_OPTS_SERIAL = ${F90_OPTS/-WF,-qfpp,-D_MPI_ -qsmp=omp:auto/}
+F90_OPTS = -g2 -O2 -qipa -qarch=pwr9 -qtune=pwr9:smt4 -qunroll -qessl $(CPP_OPTS) -qsmp=omp:auto -qsuppress=1501-510
+F90_OPTS_SERIAL = ${F90_OPTS/-WF,-qfpp,-D_MPI_/}
 F90_LINK_OPTS=$(F90_OPTS) -qpic
+
+# Optimized build
+#CPP_OPTS = -qpreprocess -WF,-qfpp,-D_MPI_
+#F90_OPTS = -g2 -Ofast -qipa -qarch=pwr9 -qtune=pwr9:smt4 -qunroll -qessl $(CPP_OPTS) -qsmp=omp:auto -qsuppress=1501-510
+#F90_OPTS_SERIAL = ${F90_OPTS/-WF,-qfpp,-D_MPI_ -qsmp=omp:auto/}
+#F90_LINK_OPTS=$(F90_OPTS) -qpic
 
 # Profiling
 #CPP_OPTS = -qpreprocess -WF,-qfpp,-D_MPI_
