@@ -4,7 +4,7 @@ implicit none
 integer, intent(in) :: ndim
 complex(8), intent(out) :: mtrx(ndim,ndim)
 ! local var
-integer lwork,nb,info, dummy
+integer lwork,nb,info
 real*8 ,allocatable :: work(:)
 integer ,allocatable :: ipiv(:)
 
