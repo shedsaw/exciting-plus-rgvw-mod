@@ -15,7 +15,7 @@ test:
 	cd tests; ./tests.sh
 
 install:
-	cp src/elk-cpu bin/elk
+	cp src/elk bin/elk
 	for UTIL in $(UTILS); do cd utilities/$$UTIL; $(MAKE) install; cd ../..; done
 
 docs:

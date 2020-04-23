@@ -1,8 +1,9 @@
 MAKE = make
-F90 = ${TAU_DIR}/bin/tau_f90.sh -optMpi
-F90SERIAL = ${TAU_DIR}/bin/tau_f90.sh -T serial
-CXX = ${TAU_DIR}/bin/tau_cxx.sh -optMpi
-CC  = ${TAU_DIR}/bin/tau_cc.sh -optMpi
+COMPILER = tau-ibm
+F90 = tau_f90.sh -optMpi
+F90SERIAL = tau_f90.sh -T serial
+CXX = tau_cxx.sh -optMpi
+CC  = tau_cc.sh -optMpi
 
 # This is where mpi.mod resides
 MPIMOD_PATH = ${OLCF_SPECTRUM_MPI_ROOT}/lib/XL
@@ -13,7 +14,7 @@ GCCOMP_PATH = ${OLCF_GCC_ROOT}/lib64
 
 # Profiling
 CPP_OPTS = -qpreprocess -I${MPIMOD_PATH} -WF,-qfpp,-D_MPI_
-F90_OPTS = -pg -g2 -Ofast -qipa -qarch=pwr9 -qtune=pwr9:smt4 -qunroll -qessl $(CPP_OPTS) -qsmp=omp:auto -qsuppress=1501-510
+F90_OPTS = -pg -g2 -O2 -qipa -qarch=pwr9 -qtune=pwr9:smt4 -qunroll -qessl $(CPP_OPTS) -qsmp=omp:auto -qsuppress=1501-510
 F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -WF,-qfpp,-D_MPI_ -qsmp=omp:auto/}
 F90_LINK_OPTS=$(F90_OPTS) -qpic
 

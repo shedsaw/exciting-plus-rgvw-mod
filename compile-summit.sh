@@ -11,6 +11,9 @@ export NVCC=$CUDA_PATH/bin/nvcc
 # TODO: read this as argv[1]
 COMPILER=ibm
 
+# Pick utilities to be compiled
+UTILS=( spacegroup pp )
+
 # Load ESSL and HDF5 modules
 module load essl
 module load hdf5
@@ -65,30 +68,28 @@ case ${COMPILER} in
     #source ./summit-xlvars.sh
     ;;
   tau-ibm)
-    echo "Unsupported compiler (see OLCF ticket #419691)"
-    exit 1
-    #module load tau/2.29
-    #module load xl
-    #export TAU_MAKEFILE=${TAU_DIR}/lib/Makefile.tau-xl-papi-mpi-cupti-openmp
-    #export USETAU=1
+    module load tau/2.29.1
+    module load xl
+    module load papi
+    export TAU_MAKEFILE=${TAU_DIR}/lib/Makefile.tau-xl_16.1.1-5-papi-mpi
+    export USETAU=1
     ;;
   tau-pgi)
-    echo "Unsupported compiler (see OLCF ticket #419691)"
-    exit 1
-    #getxlvars
-    #getgccvars
-    #module load tau/2.28.1_patched
-    #module load pgi
-    #source ./summit-xlvars.sh
-    #source ./summit-gccvars.sh
-    #export TAU_MAKEFILE=${TAU_DIR}/lib/Makefile.tau-pgi-papi-mpi-cupti-pdt-pgi
-    #export USETAU=1
+    getxlvars
+    getgccvars
+    module load tau/2.29.1
+    module load pgi
+    module load papi
+    source ./summit-xlvars.sh
+    source ./summit-gccvars.sh
+    export TAU_MAKEFILE=${TAU_DIR}/lib/Makefile.tau-pgi_19.9-papi-mpi-pgi
+    export USETAU=1
     ;;
   tau-gcc)
     echo "Unsupported compiler (TODO: write make.inc.summit.tau-gcc.cpu)"
     exit 1
     #getxlvars
-    #module load tau/2.28.1_patched
+    #module load tau/2.29.1
     #module load gcc
     #source ./summit-xlvars.sh
     #export TAU_MAKEFILE=${TAU_DIR}/lib/Makefile.tau-gnu-papi-gnu-mpi-cupti-pdt-openmp
@@ -107,10 +108,9 @@ esac
 # TODO: Write the unavailable make.inc files
 cp make.inc.summit.${COMPILER}.cpu make.inc
 
-# For now, this is always false
-# TODO: Resolve ticket #419691
+# Extract link line from make.inc
 if [ ${USETAU} ]; then
-  source ./summit-xlvars.sh
+  if [ ${COMPILER} != "tau-ibm" ]; then source ./summit-xlvars.sh; fi
   # Get vars from make.inc
   make lsvars
   source ./libs.sh
@@ -121,8 +121,8 @@ fi
 # Clean up
 make clean
 rm *.o *.mod
-rm src/elk-cpu bin/elk-cpu
-#rm src/elk-gpu bin/elk-gpu
+[[ -e /src/elk-cpu ]] || rm src/elk-cpu bin/elk-cpu
+#[[ -e /src/elk-gpu ]] || rm src/elk-gpu bin/elk-gpu
 
 # Make the binary
 make all
@@ -160,4 +160,12 @@ mv src/elk src/elk-cpu
 [[ -e bin/elk ]] || rm bin/elk
 cd bin
 cp ../src/elk-cpu elk-cpu-${COMPILER}
+#cp ../src/elk-gpu elk-gpu-${COMPILER}
 cd ..
+
+# Copy the utilities
+for util in ${UTILS[@]}; do
+  cd utilities/${util}
+  ${MAKE} install
+  cd ../..
+done

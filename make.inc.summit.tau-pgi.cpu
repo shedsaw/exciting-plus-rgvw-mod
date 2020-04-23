@@ -1,4 +1,5 @@
 MAKE = make
+COMPILER = tau-pgi
 F90 = ${TAU_DIR}/bin/tau_f90.sh -optMpi
 F90SERIAL = ${TAU_DIR}/bin/tau_f90.sh -T serial
 CXX = ${TAU_DIR}/bin/tau_cxx.sh -optMpi
@@ -12,8 +13,11 @@ MPIMOD_PATH = ${OLCF_SPECTRUM_MPI_ROOT}/lib/PGI
 GCCOMP_PATH = ${OLCF_GCC_ROOT}/lib64
 
 # Profiling
+# note: -fast stopped working,
+# see make.inc.summit.pgi.cpu for details
 CPP_OPTS = -Mpreprocess -I${MPIMOD_PATH} -D_MPI_
-F90_OPTS = -fastsse -Munroll -Mnoinline -Minform=warn $(CPP_OPTS) -mp
+#F90_OPTS = -fast -Munroll -Mnoinline -Minform=warn $(CPP_OPTS) -mp
+F90_OPTS = -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn $(CPP_OPTS) -mp
 F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -D_MPI_ -mp/}
 F90_LINK_OPTS = $(F90_OPTS) -L${GCCOMP_PATH} -fpic
 

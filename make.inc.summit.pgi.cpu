@@ -1,4 +1,5 @@
 MAKE = make
+COMPILER = pgi
 F90 = mpifort
 F90SERIAL = pgfortran
 CXX = mpic++
@@ -7,7 +8,8 @@ CC = mpicc
 # This is where mpi.mod resides
 MPIMOD_PATH = ${OLCF_SPECTRUM_MPI_ROOT}/lib/PGI
 
-# This is where GCC's OpenMP libraries reside
+# For some reason IBM Spectrum MPI depends on libpthreads and libatomic
+# which are located at GCC's OpenMP libraries directory
 # Make sure to source summit-gccpaths.sh
 GCCOMP_PATH = ${OLCF_GCC_ROOT}/lib64
 
@@ -25,19 +27,22 @@ GCCOMP_PATH = ${OLCF_GCC_ROOT}/lib64
 #F90_LINK_OPTS=$(F90_OPTS) -L${GCCOMP_PATH} -fpic
 
 # Optimized build
-#CPP_OPTS = -Mpreprocess -I${MPIMOD_PATH} -D_MPI_
-#F90_OPTS = -fastsse -Munroll -Mnoinline -Minform=warn $(CPP_OPTS) -mp
-#F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -D_MPI_ -mp/}
-#F90_LINK_OPTS=$(F90_OPTS) -L${GCCOMP_PATH} -fpic
+# For some reason -O2 or higher (including -fast and -fastsse)
+#   chokes on autoradmt.f90:39
+#   ( DO i = -1, 1 )
+CPP_OPTS = -Mpreprocess -I${MPIMOD_PATH} -D_MPI_
+#F90_OPTS = -fast -Munroll -Mnoinline -Minform=warn $(CPP_OPTS) -mp
+F90_OPTS = -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn $(CPP_OPTS) -mp
+F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -D_MPI_ -mp/}
+F90_LINK_OPTS=$(F90_OPTS) -L${GCCOMP_PATH} -fpic
 
 # Profiling
-# (-Mpfi is incompatible with -mp and -fpic,
-#  but for some reason IBM Spectrum MPI depends on libpthreads,
-#  thus pulling in libatomic)
-CPP_OPTS = -Mpreprocess -I${MPIMOD_PATH} -D_MPI_
-F90_OPTS = -Mpfi -Minstrument -Mprof=ccff -fastsse -Munroll -Mnoinline -Minform=warn $(CPP_OPTS)
-F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -D_MPI_/}
-F90_LINK_OPTS=$(F90_OPTS) -L${GCCOMP_PATH} -Bstatic_pgi
+# (Don't use -Mpfi, it is incompatible with -mp and -fpic)
+#CPP_OPTS = -Mpreprocess -I${MPIMOD_PATH} -D_MPI_
+# #F90_OPTS = -Minstrument -Mprof=ccff -fast -Munroll -Mnoinline -Minform=warn $(CPP_OPTS) -mp
+#F90_OPTS = -Minstrument -Mprof=ccff -O -Munroll -Mlre -Mflushz -Mcache_align -Mnoinline -Minform=warn $(CPP_OPTS) -mp
+#F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -D_MPI_ -mp/}
+#F90_LINK_OPTS=$(F90_OPTS) -L${GCCOMP_PATH} -fpic
 
 # Use IBM ESSL
 # Make sure to source summit-xlpaths.sh
