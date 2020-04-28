@@ -1,21 +1,20 @@
 MAKE = make
 COMPILER = tau-ibm
-F90 = tau_f90.sh -optMpi
-F90SERIAL = tau_f90.sh -T serial
-CXX = tau_cxx.sh -optMpi
-CC  = tau_cc.sh -optMpi
+F90 = ${TAU_DIR}/bin/tau_f90.sh -optMpi
+CXX = ${TAU_DIR}/bin/tau_cxx.sh -optMpi
+CC  = ${TAU_DIR}/bin/tau_cc.sh -optMpi
 
+# Note: MPIMOD_PATH still needed after Mar 10 2020 stack upgrade
 # This is where mpi.mod resides
 MPIMOD_PATH = ${OLCF_SPECTRUM_MPI_ROOT}/lib/XL
 
-# This is where GCC's OpenMP libraries reside
-# Make sure to source summit-gccpaths.sh
-GCCOMP_PATH = ${OLCF_GCC_ROOT}/lib64
-
 # Profiling
-CPP_OPTS = -qpreprocess -I${MPIMOD_PATH} -WF,-qfpp,-D_MPI_
-F90_OPTS = -pg -g2 -O2 -qipa -qarch=pwr9 -qtune=pwr9:smt4 -qunroll -qessl $(CPP_OPTS) -qsmp=omp:auto -qsuppress=1501-510
-F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -WF,-qfpp,-D_MPI_ -qsmp=omp:auto/}
+CPP_OPTS = -qpreprocess -WF,-qfpp,-D_MPI_
+
+#F90_OPTS = -pg -g2 -O2 -qipa -qarch=pwr9 -qtune=pwr9:smt4 -qunroll -qessl $(CPP_OPTS) -qsmp=omp:auto -qsuppress=1501-510
+#F90_OPTS = -pg -g2 -O2 -qipa -qarch=pwr9 -qtune=pwr9:smt4 -qunroll -qessl $(CPP_OPTS) -I${MPIMOD_PATH} -qsmp=omp:auto -qsuppress=1501-510
+F90_OPTS = -pg -g2 -O2 -qarch=pwr9 -qtune=pwr9:smt4 -qunroll -qessl $(CPP_OPTS) -I${MPIMOD_PATH} -qsmp=omp:auto -qsuppress=1501-510
+
 F90_LINK_OPTS=$(F90_OPTS) -qpic
 
 # Use IBM ESSL
@@ -43,4 +42,3 @@ CPP_OPTS := $(CPP_OPTS) $(HDF5_OPTS)
 
 # === collect all libraries under one name ===
 LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(TAU_MPI_FLIBS) $(TAU_LIBS) $(TAU_CXXLIBS)
-LIBS_SERIAL = $(LAPACK_LIB) $(HDF5_LIB) $(TAU_LIBS) $(TAU_CXXLIBS)
