@@ -5,46 +5,50 @@ F90SERIAL = pgfortran
 CXX = mpic++
 CC = mpicc
 
+# Note: MPIMOD_PATH no longer needed after Mar 10 2020 stack upgrade
 # This is where mpi.mod resides
-MPIMOD_PATH = ${OLCF_SPECTRUM_MPI_ROOT}/lib/PGI
+#MPIMOD_PATH = ${OLCF_SPECTRUM_MPI_ROOT}/lib/PGI
+#CPP_OPTS = -Mpreprocess -I${MPIMOD_PATH} -D_MPI_
+#F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -D_MPI_ -mp/}
 
-# For some reason IBM Spectrum MPI depends on libpthreads and libatomic
-# which are located at GCC's OpenMP libraries directory
+# For some reason IBM Spectrum MPI pulls along libpthreads and libatomic
+# which are located in GCC's OpenMP libraries directory
 # Make sure to source summit-gccpaths.sh
 GCCOMP_PATH = ${OLCF_GCC_ROOT}/lib64
 
 # Debugging
-#CPP_OPTS = -Mpreprocess -I${MPIMOD_PATH} -D_MPI_
+#CPP_OPTS = -Mpreprocess -D_MPI_
 #F90_OPTS = -g -Minform=warn $(CPP_OPTS) -mp
-#F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -D_MPI_ -mp/}
+#F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_ -mp/}
 #F90_LINK_OPTS=$(F90_OPTS) -L${GCCOMP_PATH} -fpic
 
 # Debugging with extra checks
 # (Don't forget to enable core dump generation using `ulimit -c unlimited`)
-#CPP_OPTS = -Mpreprocess -I${MPIMOD_PATH} -D_MPI_
+#CPP_OPTS = -Mpreprocess -D_MPI_
 #F90_OPTS = -g -O0 -Minform=warn -Mbounds -traceback $(CPP_OPTS) -mp
-#F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -D_MPI_ -mp/}
+#F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_ -mp/}
 #F90_LINK_OPTS=$(F90_OPTS) -L${GCCOMP_PATH} -fpic
 
 # Optimized build
 # For some reason -O2 or higher (including -fast and -fastsse)
 #   chokes on autoradmt.f90:39
-#   ( DO i = -1, 1 )
-CPP_OPTS = -Mpreprocess -I${MPIMOD_PATH} -D_MPI_
-#F90_OPTS = -fast -Munroll -Mnoinline -Minform=warn $(CPP_OPTS) -mp
+#     DO i = -1, 1
+#   (see OLCF ticket #419691)
+CPP_OPTS = -Mpreprocess -D_MPI_
+# #F90_OPTS = -fast -Munroll -Mnoinline -Minform=warn $(CPP_OPTS) -mp
 F90_OPTS = -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn $(CPP_OPTS) -mp
-F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -D_MPI_ -mp/}
-F90_LINK_OPTS=$(F90_OPTS) -L${GCCOMP_PATH} -fpic
+F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_ -mp/}
+F90_LINK_OPTS=$(F90_OPTS) -fpic
 
 # Profiling
 # (Don't use -Mpfi, it is incompatible with -mp and -fpic)
-#CPP_OPTS = -Mpreprocess -I${MPIMOD_PATH} -D_MPI_
+#CPP_OPTS = -Mpreprocess -D_MPI_
 # #F90_OPTS = -Minstrument -Mprof=ccff -fast -Munroll -Mnoinline -Minform=warn $(CPP_OPTS) -mp
 #F90_OPTS = -Minstrument -Mprof=ccff -O -Munroll -Mlre -Mflushz -Mcache_align -Mnoinline -Minform=warn $(CPP_OPTS) -mp
-#F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -D_MPI_ -mp/}
+#F90_OPTS_SERIAL = ${F90_OPTS/-D_MPI_ -mp/}
 #F90_LINK_OPTS=$(F90_OPTS) -L${GCCOMP_PATH} -fpic
 
-# Use IBM ESSL
+# Use IBM ESSL (depends on libxlf90_r)
 # Make sure to source summit-xlpaths.sh
 LAPACK_LIB = -L${OLCF_ESSL_ROOT}/lib64 -lessl -L${OLCF_XLF_ROOT}/lib -lxlf90_r
 
@@ -70,5 +74,3 @@ CPP_OPTS := $(CPP_OPTS) $(HDF5_OPTS)
 
 # === collect all libraries under one name ===
 LIBS = $(LAPACK_LIB) $(HDF5_LIB)
-
-

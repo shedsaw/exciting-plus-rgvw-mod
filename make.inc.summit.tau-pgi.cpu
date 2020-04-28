@@ -1,27 +1,31 @@
 MAKE = make
 COMPILER = tau-pgi
 F90 = ${TAU_DIR}/bin/tau_f90.sh -optMpi
-F90SERIAL = ${TAU_DIR}/bin/tau_f90.sh -T serial
 CXX = ${TAU_DIR}/bin/tau_cxx.sh -optMpi
 CC  = ${TAU_DIR}/bin/tau_cc.sh -optMpi
 
+# Note: MPIMOD_PATH still needed after Mar 10 2020 stack upgrade
 # This is where mpi.mod resides
 MPIMOD_PATH = ${OLCF_SPECTRUM_MPI_ROOT}/lib/PGI
 
-# This is where GCC's OpenMP libraries reside
-# Make sure to source summit-gccpaths.sh
-GCCOMP_PATH = ${OLCF_GCC_ROOT}/lib64
+# Note: GCCOMP_PATH no longer needed after Mar 10 2020 stack upgrade
+#GCCOMP_PATH = ${OLCF_GCC_ROOT}/lib64
 
 # Profiling
 # note: -fast stopped working,
 # see make.inc.summit.pgi.cpu for details
-CPP_OPTS = -Mpreprocess -I${MPIMOD_PATH} -D_MPI_
-#F90_OPTS = -fast -Munroll -Mnoinline -Minform=warn $(CPP_OPTS) -mp
-F90_OPTS = -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn $(CPP_OPTS) -mp
-F90_OPTS_SERIAL = ${F90_OPTS/-I${MPIMOD_PATH} -D_MPI_ -mp/}
-F90_LINK_OPTS = $(F90_OPTS) -L${GCCOMP_PATH} -fpic
+CPP_OPTS = -Mpreprocess -D_MPI_
+# #F90_OPTS = -fast -Munroll -Mnoinline -Minform=warn $(CPP_OPTS) -mp
 
-# Use IBM ESSL
+#F90_OPTS = -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn $(CPP_OPTS) -mp
+#F90_OPTS = -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn $(CPP_OPTS) -I${MPIMOD_PATH} -mp
+F90_OPTS = -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn $(CPP_OPTS) -I${MPIMOD_PATH} -mp -Minfo=ftn,loop,opt,mp,par,vect
+
+#F90_LINK_OPTS = $(F90_OPTS) -L${GCCOMP_PATH} -fpic
+F90_LINK_OPTS = $(F90_OPTS) -fpic
+
+# Use IBM ESSL (depends on libxlf90_r)
+# Make sure to source summit-xlpaths.sh
 LAPACK_LIB = -L${OLCF_ESSL_ROOT}/lib64 -lessl -L${OLCF_XLF_ROOT}/lib -lxlf90_r
 
 # === compile with HDF5 support ===
@@ -46,4 +50,4 @@ CPP_OPTS := $(CPP_OPTS) $(HDF5_OPTS)
 
 # === collect all libraries under one name ===
 LIBS = $(LAPACK_LIB) $(HDF5_LIB) $(TAU_MPI_FLIBS) $(TAU_LIBS) $(TAU_CXXLIBS)
-LIBS_SERIAL = $(LAPACK_LIB) $(HDF5_LIB) $(TAU_LIBS) $(TAU_CXXLIBS)
+

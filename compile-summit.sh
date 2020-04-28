@@ -41,8 +41,7 @@ getgccvars() {
 }
 
 # Load compiler module and TAU (if needed)
-# Note that TAU 2.29 is botched (doesn't link in MPI libs properly)
-# Use tau/2.28.1_patched (but this one doesn't support IBM XL)
+# Note: use TAU 2.29.1
 # TODO: Resolve ticket #419691
 case ${COMPILER} in
   ibm)
@@ -163,9 +162,12 @@ cp ../src/elk-cpu elk-cpu-${COMPILER}
 #cp ../src/elk-gpu elk-gpu-${COMPILER}
 cd ..
 
-# Copy the utilities
-for util in ${UTILS[@]}; do
-  cd utilities/${util}
-  ${MAKE} install
-  cd ../..
-done
+# Copy the utilities (but not when compiling with TAU)
+if [ -z ${USETAU} ]; then
+  for util in ${UTILS[@]}; do
+    cd utilities/${util}
+    ${MAKE} clean
+    ${MAKE} install
+    cd ../..
+  done
+fi
