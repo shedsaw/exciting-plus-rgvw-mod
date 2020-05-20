@@ -24,10 +24,14 @@ logical l1
 complex(8), allocatable :: wftmp1(:,:)
 complex(8), allocatable :: wftmp2(:,:)
 complex(8), allocatable :: wfir1(:)
-complex(8) b1(lmmaxapw*nufrmax),b2(lmmaxapw*nufrmax)
+complex(8) b1(lmmaxapw*nufrmax),b2(lmmaxapw*nufrmax) ! TODO: convert to matrices
+
+#ifdef _DEBUG_bmegqblh_
+  INTEGER :: dbgcnt,dbgunit
+#endif // _DEBUG_bmegqblh_
 
 wfsize=lmmaxapw*nufrmax*natmtot+ngknr2
-allocate(wftmp1(wfsize,ngq(iq)))
+allocate(wftmp1(wfsize,ngq(iq))) ! TODO: Change dimensions appropriately
 allocate(wftmp2(wfsize,nstsv))
 allocate(wfir1(ngrtot))
 call papi_timer_start(pt_megqblh)
@@ -38,6 +42,13 @@ ik=mpi_grid_map(nkptnr,dim_k,loc=ikloc)
 jk=idxkq(1,ik)
 ! G_q vector 
 igkq=idxkq(2,ik)
+
+#ifdef _DEBUG_bmegqblh_
+  dbgunit = 1000+iproc ! Make sure this matches the definition in mod_expigqr
+  dbgcnt=1
+
+  WRITE( dbgunit, '(A,I3,A,I5)' ) 'nmegqblh(ikloc=', ikloc, ') = ', nmegqblh(ikloc)
+#endif // _DEBUG_bmegqblh_
 
 do ispn1=1,nspinor
   if (expigqr22.eq.1) ispn2=ispn1
@@ -55,6 +66,8 @@ do ispn1=1,nspinor
     if (l1) then
       call timer_start(3)
       call papi_timer_start(pt_megqblh_mt)
+
+      ! TODO: insert OMP directives here
       do ig=1,ngq(iq)
 ! precompute muffint-tin part of \psi_1^{*}(r)*e^{-i(G+q)r}
         do ias=1,natmtot
@@ -65,10 +78,13 @@ do ispn1=1,nspinor
           !  b2(igntuju(2,j,ic,ig))=b2(igntuju(2,j,ic,ig))+&
           !    &b1(igntuju(1,j,ic,ig))*gntuju(j,ic,ig)
           !enddo
+
+          ! TODO: convert to true ZGEMM
           call zgemm('N','N',lmmaxapw*nufrmax,1,lmmaxapw*nufrmax,&
             &zone,gntuju(1,1,ic,ig),lmmaxapw*nufrmax,b1,lmmaxapw*nufrmax,&
             &zzero,b2,lmmaxapw*nufrmax)
           wftmp1((ias-1)*lmmaxapw*nufrmax+1:ias*lmmaxapw*nufrmax,ig)=b2(:)
+
         enddo !ias
       enddo !ig  
       call timer_stop(3)
@@ -101,7 +117,15 @@ do ispn1=1,nspinor
     n1=0
 ! collect right |ket> states into matrix wftmp2
     do while ((i+n1).le.nmegqblh(ikloc))
+
+#ifdef _DEBUG_bmegqblh_
+      if (bmegqblh(1,i+n1,ikloc).ne.bmegqblh(1,i,ikloc)) THEN
+         WRITE( dbgunit, '(7(1X,I5))' ) dbgcnt, ikloc, iq, ist1, i, n1-1, i+n1-2
+      END IF
+#else
       if (bmegqblh(1,i+n1,ikloc).ne.bmegqblh(1,i,ikloc)) exit
+#endif  // _DEBUG_bmegqblh_
+
       ist2=bmegqblh(2,i+n1,ikloc)
       n1=n1+1
       call memcopy(wfsvmt2(1,1,1,ispn2,ist2),wftmp2(1,n1),16*lmmaxapw*nufrmax*natmtot)

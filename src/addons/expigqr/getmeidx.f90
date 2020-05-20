@@ -37,6 +37,7 @@ if (wannier_megq) then
   call mpi_grid_reduce(wann_bnd_k(1,1),nstsv*nkptnr,dims=(/dim_k/),&
     &all=.true.,op=op_max)
 endif !wannier_megq
+
 do ikloc=1,nkptnrloc
   ik=mpi_grid_map(nkptnr,dim_k,loc=ikloc)
   jk=idxkq(1,ik)
@@ -110,4 +111,3 @@ if (wannier_megq) then
 endif
 return
 end
-

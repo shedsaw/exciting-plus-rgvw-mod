@@ -110,6 +110,12 @@ integer lmaxexp,lmmaxexp
 integer np
 character*100 :: qnm,qdir,fout
 integer, allocatable :: waninc(:)
+
+#ifdef _DEBUG_bmegqblh_
+  INTEGER :: dbgunit
+  CHARACTER(LEN=32) :: dbgfile
+#endif // _DEBUG_bmegqblh_
+
 call papi_timer_start(pt_megq)
 
 ! maximum l for exponent expansion
@@ -124,6 +130,15 @@ if (mpi_grid_root((/dim_k/)).and.tout) then
   fout=trim(qnm)//"_ME.OUT"
   open(150,file=trim(fout),form="formatted",status="replace")
 endif
+
+#ifdef _DEBUG_bmegqblh_
+  ! Note: iproc is the global MPI rank as defined in mod_mpi_grid
+  dbgunit = 1000 + iproc
+  WRITE( dbgfile, '(A,I3.3)' ) 'bmegqblh.', iproc
+  OPEN( UNIT=dbgunit, FILE=TRIM(dbgfile), ACTION='write', POSITION='append' )
+  WRITE( dbgunit, * ) '#bmegqblh(1,:,:) iproc=', iproc, 'nstsv**2=', nstsv**2
+  WRITE( dbgunit, '(A)' ) 'count ikloc iq    iband i     n1    i+n1-1'
+#endif // _DEBUG_bmegqblh_
 
 if (wproc) then
   write(150,*)
@@ -269,7 +284,7 @@ if (wannier_megq) then
 endif
 !call printmegqblh(iq)
 ! for G=q=0: e^{iqx}=1+iqx
-! from "Formalism of Bnad Theory" by E.I. Blount:
+! from "Formalism of Band Theory" by E.I. Blount:
 !   v=p/m
 !   v=-i/\hbar [x,H]
 ! -i(xH-Hx)=p 
@@ -350,6 +365,12 @@ if (wproc) then
   call flushifc(150)
   close(150)
 endif
+
+#ifdef _DEBUG_bmegqblh_
+  CALL flushifc( dbgunit )
+  CLOSE( dbgunit )
+#endif // _DEBUG_bmegqblh_
+
 return
 end subroutine
 
@@ -421,5 +442,30 @@ deallocate(jkmap)
 call mpi_grid_barrier((/dim_k/))
 return
 end subroutine
+
+!--begin Patch memory leaks
+SUBROUTINE cleanup_expigqr
+  IMPLICIT NONE
+
+  IF( ALLOCATED(nmegqblh)       ) DEALLOCATE( nmegqblh )
+  IF( ALLOCATED(bmegqblh)       ) DEALLOCATE( bmegqblh )
+  IF( ALLOCATED(megqblh)        ) DEALLOCATE( megqblh )
+  IF( ALLOCATED(amegqblh)       ) DEALLOCATE( amegqblh )
+  IF( ALLOCATED(namegqblh)      ) DEALLOCATE( namegqblh )
+  IF( ALLOCATED(bamegqblh)      ) DEALLOCATE( bamegqblh )
+  IF( ALLOCATED(megqwan)        ) DEALLOCATE( megqwan )
+  IF( ALLOCATED(iwann_include)  ) DEALLOCATE( iwann_include )
+  IF( ALLOCATED(nmegqblhwan)    ) DEALLOCATE( nmegqblhwan )
+  IF( ALLOCATED(imegqblhwan)    ) DEALLOCATE( imegqblhwan )
+  IF( ALLOCATED(wann_c_jk)      ) DEALLOCATE( wann_c_jk )
+  IF( ALLOCATED(ngntuju)        ) DEALLOCATE( ngntuju )
+  IF( ALLOCATED(igntuju)        ) DEALLOCATE( igntuju )
+  IF( ALLOCATED(gntuju)         ) DEALLOCATE( gntuju )
+  IF( ALLOCATED(idxkq)          ) DEALLOCATE( idxkq )
+  CALL deletewantran( megqwantran )
+
+  RETURN
+END SUBROUTINE cleanup_expigqr
+!--end Patch memory leaks
 
 end module
