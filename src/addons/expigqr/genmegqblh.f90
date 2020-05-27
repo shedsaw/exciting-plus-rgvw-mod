@@ -121,6 +121,7 @@ do ispn1=1,nspinor
 #ifdef _DEBUG_bmegqblh_
       if (bmegqblh(1,i+n1,ikloc).ne.bmegqblh(1,i,ikloc)) THEN
          WRITE( dbgunit, '(7(1X,I5))' ) dbgcnt, ikloc, iq, ist1, i, n1-1, i+n1-2
+         EXIT
       END IF
 #else
       if (bmegqblh(1,i+n1,ikloc).ne.bmegqblh(1,i,ikloc)) exit
