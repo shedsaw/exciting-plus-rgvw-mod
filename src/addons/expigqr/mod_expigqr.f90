@@ -19,6 +19,45 @@ integer, allocatable :: nmegqblh(:)
 !   3-rd index : k-point
 integer, allocatable :: bmegqblh(:,:,:)
 
+!--begin Convert do while into bounded do loop
+
+! We need three array variables.
+
+! To replace the outer do while loop in genmegqblh() line 55-188,
+! the first array contains the index n of Bloch basis state <n,k| that satisfies
+! the original "do while" condition. The value varies for each k- and q-point.
+! This array is allocated in init_band_trans() line 23,
+!               populated for each ikloc in getmeidx() line 155,
+!               loaded into idxhiband in genmegqblh() line 65
+!           and deallocated in cleanup_expigqr(), in this file, line 473.
+! idx_hi_band_blh_loc = LOCal InDeX of HIghest BAND for G,k,q in BLocH basis
+! The index is the local k-point index (ikloc=1:nkptnrloc)
+INTEGER, ALLOCATABLE :: idxhibandblhloc(:)
+
+! To replace the inner do while loop in genmegqblh() line 137-143,
+! the second and third arrays, respectively, contains:
+! - the number of |n',k+q> kets that are paired to each <n,k| Bloch basis state
+! - the starting indices for each band n in bmegqblh
+! for each local k-point ikloc and band index n
+! (basically, keep track of when bmegqblh(1,:,ikloc) gets incremented)
+! n_tran_gkq_blh_loc = LOCal array for Number of TRANsitions, G, k, q,
+!                      for BLocH basis calculation
+! idx_tran_blh_loc = Local array for start InDeX of each TRANsition, G, k, q,
+!                      for BLocH basis calculation
+! These arrays are allocated in init_band_trans() line 27 and 31,
+!                  populated for each ist1 = n and ikloc 
+!                            in getmeidx() line 145 and 64,
+!                  loaded into ntranloc and idxtranloc
+!                         in genmegqblh() line 157 and 77,
+!              and deallocated in cleanup_expigqr(), in this file, line 474-475,
+! respectively.
+! The 1nd index is the band index n        (istsv=1:nstsv),    and
+! the 2rd index is the local k-point index (ikloc=1:nkptnrloc)
+INTEGER, ALLOCATABLE :: ntranblhloc(:,:)
+INTEGER, ALLOCATABLE :: idxtranblhloc(:,:)
+
+!--end Convert do while into bounded do loop
+
 ! matrix elements <nk|e^{-i(G+q)x}|n'k+q> in the Bloch basis
 !   1-st index : local index of pair of bands (n,n')
 !   2-nd index : G-vector
@@ -449,6 +488,9 @@ SUBROUTINE cleanup_expigqr
 
   IF( ALLOCATED(nmegqblh)       ) DEALLOCATE( nmegqblh )
   IF( ALLOCATED(bmegqblh)       ) DEALLOCATE( bmegqblh )
+  IF( ALLOCATED(idxhibandblhloc)) DEALLOCATE( idxhibandblhloc )
+  IF( ALLOCATED(ntranblhloc)    ) DEALLOCATE( ntranblhloc )
+  IF( ALLOCATED(idxtranblhloc)  ) DEALLOCATE( idxtranblhloc )
   IF( ALLOCATED(megqblh)        ) DEALLOCATE( megqblh )
   IF( ALLOCATED(amegqblh)       ) DEALLOCATE( amegqblh )
   IF( ALLOCATED(namegqblh)      ) DEALLOCATE( namegqblh )
