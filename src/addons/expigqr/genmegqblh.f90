@@ -117,21 +117,18 @@ do ispn1=1,nspinor
     n1=0
 ! collect right |ket> states into matrix wftmp2
     do while ((i+n1).le.nmegqblh(ikloc))
-
-#ifdef _DEBUG_bmegqblh_
-      if (bmegqblh(1,i+n1,ikloc).ne.bmegqblh(1,i,ikloc)) THEN
-         WRITE( dbgunit, '(7(1X,I5))' ) dbgcnt, ikloc, iq, ist1, i, n1-1, i+n1-2
-         EXIT
-      END IF
-#else
       if (bmegqblh(1,i+n1,ikloc).ne.bmegqblh(1,i,ikloc)) exit
-#endif  // _DEBUG_bmegqblh_
-
       ist2=bmegqblh(2,i+n1,ikloc)
       n1=n1+1
       call memcopy(wfsvmt2(1,1,1,ispn2,ist2),wftmp2(1,n1),16*lmmaxapw*nufrmax*natmtot)
       call memcopy(wfsvit2(1,ispn2,ist2),wftmp2(lmmaxapw*nufrmax*natmtot+1,n1),16*ngknr2)
     enddo !while
+
+#ifdef _DEBUG_bmegqblh_
+    WRITE( dbgunit, '(7(1X,I5))' ) dbgcnt, ikloc, iq, ist1, i, n1, i+n1-1
+    dbgcnt = dbgcnt + 1
+#endif  // _DEBUG_bmegqblh_
+
 ! update several matrix elements by doing matrix*matrix operation
 !  me(ib,ig)=wftmp2(ig2,ib)^{T}*wftmp1(ig2,ig)
     call zgemm('T','N',n1,ngq(iq),wfsize,zone,wftmp2,wfsize,wftmp1,wfsize,&
@@ -139,6 +136,11 @@ do ispn1=1,nspinor
     i=i+n1
     call timer_stop(5)
   enddo !while
+
+#ifdef _DEBUG_bmegqblh_
+    WRITE( dbgunit, '(A,I3)' ) 'highest band = ', ist1
+#endif  // _DEBUG_bmegqblh_
+
 enddo !ispn
 deallocate(wftmp1)
 deallocate(wftmp2)
