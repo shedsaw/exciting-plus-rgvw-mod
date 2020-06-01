@@ -24,12 +24,12 @@ integer, allocatable :: bmegqblh(:,:,:)
 ! We need three array variables.
 
 ! To replace the outer do while loop in genmegqblh() line 55-188,
-! the first array contains the index n of Bloch basis state <n,k| that satisfies
-! the original "do while" condition. The value varies for each k- and q-point.
+! the 1st array contains the index n of Bloch basis state <n,k| that satisfies
+! the original "do while" condition. It can vary for each k- and q-point
 ! This array is allocated in init_band_trans() line 23,
-!               populated for each ikloc in getmeidx() line 155,
-!               loaded into idxhiband in genmegqblh() line 65
-!           and deallocated in cleanup_expigqr(), in this file, line 473.
+!               populated for each ikloc in getmeidx() line 180,
+!               loaded into idxhiband in genmegqblh() line 65,
+!           and deallocated in cleanup_expigqr(), in this file, line 501.
 ! idx_hi_band_blh_loc = LOCal InDeX of HIghest BAND for G,k,q in BLocH basis
 ! The index is the local k-point index (ikloc=1:nkptnrloc)
 INTEGER, ALLOCATABLE :: idxhibandblhloc(:)
@@ -40,20 +40,30 @@ INTEGER, ALLOCATABLE :: idxhibandblhloc(:)
 ! - the starting indices for each band n in bmegqblh
 ! for each local k-point ikloc and band index n
 ! (basically, keep track of when bmegqblh(1,:,ikloc) gets incremented)
-! n_tran_gkq_blh_loc = LOCal array for Number of TRANsitions, G, k, q,
-!                      for BLocH basis calculation
-! idx_tran_blh_loc = Local array for start InDeX of each TRANsition, G, k, q,
-!                      for BLocH basis calculation
-! These arrays are allocated in init_band_trans() line 27 and 31,
-!                  populated for each ist1 = n and ikloc 
-!                            in getmeidx() line 145 and 64,
-!                  loaded into ntranloc and idxtranloc
-!                         in genmegqblh() line 157 and 77,
-!              and deallocated in cleanup_expigqr(), in this file, line 474-475,
-! respectively.
-! The 1nd index is the band index n        (istsv=1:nstsv),    and
-! the 2rd index is the local k-point index (ikloc=1:nkptnrloc)
-INTEGER, ALLOCATABLE :: ntranblhloc(:,:)
+
+! 2nd array:
+! n_tran_blh_loc = LOCal array for Number of TRANsitions
+!                    of each k- and q-vector for BLocH basis calculation
+!                    (the value stays the same for a given k and q)
+! This array is allocated in init_band_trans() line 27,
+!               populated for each ikloc in getmeidx() line 175,
+!               loaded into ntran in genmegqblh() line 60,
+!           and deallocated in cleanup_expigqr(), in this file line 502.
+! The index is the local k-point index (ikloc=1:nkptnrloc)
+INTEGER, ALLOCATABLE :: ntranblhloc(:)
+
+! Flag to make sure this value stays the same across bands
+LOGICAL :: ltranconst
+
+! 3rd array:
+! idx_tran_blh_loc = LOCal array for start InDeX of each TRANsition
+!                    of each band, k- and q-vector for BLocH basis calculation
+! This array is allocated in init_band_trans() line 31,
+!               populated for each ist1 = n and ikloc in getmeidx() line 125,
+!               loaded into idxtranloc in genmegqblh() line 79,
+!           and deallocated in cleanup_expigqr(), in this file line 503.
+! The 1st index is the band index n        (istsv=1:nstsv),    and
+! the 2nd index is the local k-point index (ikloc=1:nkptnrloc)
 INTEGER, ALLOCATABLE :: idxtranblhloc(:,:)
 
 !--end Convert do while into bounded do loop

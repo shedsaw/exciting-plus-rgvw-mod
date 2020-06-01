@@ -3,7 +3,7 @@ use modmain
 use mod_nrkp
 use mod_expigqr
 implicit none
-!
+
 logical, intent(in) :: allibt
 ! local variables
 integer i,ik,jk,ist1,ist2,ikloc,n,i1,i2,n1,n2
@@ -13,12 +13,12 @@ integer*2, allocatable :: wann_bnd_n(:,:)
 integer*2, allocatable :: wann_bnd_k(:,:)
 logical, external :: bndint
 
-!--begin Convert do while into bounded do loop
+INTEGER :: idxhiband, ntran, ntranchk
+LOGICAL :: lwatch, l1stband
 
-INTEGER :: idxhiband, ntran
-LOGICAL :: lwatch
-
-!--end Convert do while into bounded do loop
+! Reinitialize this value for every iq
+! (flag is declared in module mod_expigqr line 56)
+ltranconst = .TRUE.
 
 if (wannier_megq) then
   allocate(wann_bnd_n(nstsv,nwantot))
@@ -50,24 +50,18 @@ do ikloc=1,nkptnrloc
   jk=idxkq(1,ik)
   i=0
 
-!--begin Convert do while into bounded do loop
-
-  ! Reinitialize this value for every ikloc
+  ! Reinitialize these values for every ikloc
+  ntran = 0
   idxhiband = 0
-
-!--end Convert do while into bounded do loop
+  l1stband = .FALSE.
 
   do ist1=1,nstsv
-
-!--begin Convert do while into bounded do loop
-
-    ! Reinitialize this value for every ist1 and ikloc
-    ntran = 0
 
     ! Start watching for first "hit" on laddme
     lwatch = .TRUE.
 
-!--end Convert do while into bounded do loop
+    ! Reinitialize this value for every ikloc and ist1
+    ntranchk = 0
 
     do ist2=1,nstsv
       lwanibt=.false.
@@ -121,13 +115,13 @@ do ikloc=1,nkptnrloc
       if (laddme) then
         i=i+1
 
-!--begin Convert do while into bounded do loop
-
         ! When first "hit" on laddme happens for every ist1 and ikloc,
         ! the "watcher" is active ( lwatch .EQV. .TRUE. )
         IF( lwatch ) THEN
 
            ! Record position of first "hit" for this ist and ikloc
+           ! (array is declared in module mod_expigqr line 67
+           !       and allocated in init_band_trans() line 31)
            idxtranblhloc(ist1,ikloc) = i
 
            ! Stop watching
@@ -135,14 +129,24 @@ do ikloc=1,nkptnrloc
 
         END IF ! lwatch
 
-        ! Accumulate number of paired bands
-        ! (like i, but ntran can be different for each ist1)
-        ntran = ntran + 1
+        ! For the first "hit" at the first band, idxhiband was still 0
+        IF( idxhiband == 0 ) THEN
+           l1stband = .TRUE.
+        ELSE
+           ! At the second band, this condition will trigger
+           IF( l1stband .AND. ( idxhiband /= ist1 ) ) l1stband = .FALSE.
+        END IF
 
         ! Update idxhiband every time laddme == .TRUE.
         idxhiband = ist1
 
-!--end Convert do while into bounded do loop
+        ! Accumulate number of paired bands
+        ! (like i, but only for the first band)
+        IF( l1stband ) ntran = ntran + 1
+
+        ! Counter to make sure ntran stays the same across bands
+        ! (accumulate number of paired bands for each ist1)
+        ntranchk = ntranchk + 1
 
         bmegqblh(1,i,ikloc)=ist1
         bmegqblh(2,i,ikloc)=ist2
@@ -153,24 +157,26 @@ do ikloc=1,nkptnrloc
       endif !laddme
     enddo !ist2
 
-!--begin Convert do while into bounded do loop
-
-    ! Save number of |n',k+q> Bloch kets paired with this <n=ist1,k| bra
-    ! (array is declared in module mod_expigqr line 33
-    !       and allocated in init_band_trans() line 22)
-    ntranblhloc(ist1,ikloc) = ntran
-
-!--end Convert do while into bounded do loop
+    ! Make sure ntran stays the same across different bands
+    IF( (ntranchk /= 0) .AND. (ntranchk /= ntran) ) THEN
+       ! Unit 151 is either 'CRPA.OUT' or 'RESPONSE.OUT'
+       WRITE( 151, '( "Warning[getmeidx]: rank ", I5, ": ntran is different ",&
+                    &"for ist1=", I6, " ikloc=", I6 )' ) iproc, ist1, ikloc
+       ltranconst = .FALSE.
+    END IF
 
   enddo !ist1
   nmegqblh(ikloc)=i
 
-!--begin Convert do while into bounded do loop
+  ! Save number of |n',k+q> Bloch kets paired to each <n=ist1,k| bra
+  ! (array is declared in module mod_expigqr line 53
+  !       and allocated in init_band_trans() line 27)
+  ntranblhloc(ikloc) = ntran
 
   ! Store idxhiband, that is, the 'highest' band index with transitions
+  ! (array is declared in module mod_expigqr line 67
+  !       and allocated in init_band_trans() line 31)
   idxhibandblhloc(ikloc) = idxhiband
-
-!--end Convert do while into bounded do loop
 
 enddo !ikloc
 if (wannier_megq) then

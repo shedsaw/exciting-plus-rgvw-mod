@@ -24,8 +24,8 @@ ALLOCATE( idxhibandblhloc(nkptnrloc) )
 idxhibandblhloc(:) = 0
 
 IF( ALLOCATED(ntranblhloc) ) DEALLOCATE( ntranblhloc )
-ALLOCATE( ntranblhloc(nstsv,nkptnrloc) )
-ntranblhloc(:,:) = 0
+ALLOCATE( ntranblhloc(nkptnrloc) )
+ntranblhloc(:) = 0
 
 IF( ALLOCATED(idxtranblhloc) ) DEALLOCATE( idxtranblhloc )
 ALLOCATE( idxtranblhloc(nstsv,nkptnrloc) )

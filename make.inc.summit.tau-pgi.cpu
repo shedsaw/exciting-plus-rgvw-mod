@@ -62,10 +62,10 @@ F90_OPTS += $(OMP_OPTS)
 #EXE_SFX = prof
 
 # Profiling with debug option to dump bmegqblh
-CPP_OPTS += -D_DEBUG_bmegqblh_
-F90_OPTS += -gopt -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn
-F90_LINK_OPTS = $(F90_OPTS) -fpic
-EXE_SFX = patch3-dumpvars
+#CPP_OPTS += -D_DEBUG_bmegqblh_
+#F90_OPTS += -gopt -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn
+#F90_LINK_OPTS = $(F90_OPTS) -fpic
+#EXE_SFX = patch3-dumpvars
 
 # Profiling with equivalent options to '-O2'
 # Note: don't use '-Mpfi', it is incompatible with '-mp' and '-fpic'
