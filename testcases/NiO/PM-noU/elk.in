@@ -1,3 +1,8 @@
+notes
+NiO paramagnetic, GGA-PBE, no Hubbard U
+8x8x8 k-mesh, 10 G-shells, 20 empty states
+
+
 tasks
  0
  801
@@ -22,6 +27,20 @@ tasks
 !     800 (response)
 ! 5. Finally, run cRPA to get the Hubbard U's:
 !     801 (crpa)
+
+! Frequently changed parameters
+
+ngridk
+  8  8  8
+
+tgqsh
+.TRUE.                                  : tgqsh
+
+gqsh
+ 10                                     : gqsh
+
+nempty
+  20
 
 
 !---Wannier block begin
@@ -56,8 +75,8 @@ wann_exclude_eint
 ! 0 0 0                                  : vqm(:,1)
 ! 1 0 0                                  : vqm(:,2)
 
-gqmax
- 4.0                                    : gqmax
+!gqmax
+! 4.0                                    : gqmax
 
 vq0c
   0.00001  0.00000  0.00000             : vq0c
@@ -67,8 +86,8 @@ response_wann
 .FALSE.                                 : wannier_chi0_afm
 
 response_w
- 11                                     : lr_nw
- 0.0  10.0  0.1                         : lr_w0, lr_w1, lr_eta
+ 1                                      : lr_nw
+ 0.0  0.0  0.1                          : lr_w0, lr_w1, lr_eta
 
 response_fxc                                
  0  1  0.0  0.0                         : fxctype, nfxca, fxca0, fxca1
@@ -98,12 +117,6 @@ megqwan_include  ! Wannier orbitals included in target to calculate cRPA.
 !gmaxvr
 ! 8.0                                    : gmaxvr
 
-tgqsh
-.TRUE.                                  : tgqsh
-
-gqsh
- 10                                     : gqsh
-
 !---cRPA block end
 
 
@@ -124,7 +137,7 @@ scale
 
 ! this is the relative path to the species files
 sppath
-  '../species/'
+  '../../species/'
 
 atoms
    2                                    : nspecies
@@ -135,17 +148,11 @@ atoms
    1                                    : natoms; atposl, bfcmt below
     0.50000000    0.50000000    0.00000000    0.00000000  0.00000000  0.00000000
 
-ngridk
-  4  4  4
-
 !vkloff
 !  0.5  0.5  0.5
 
 reducek
   1
-
-nempty
-  10
 
 plot1d
   12  100                             : nvp1d, npp1d
