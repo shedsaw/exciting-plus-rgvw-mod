@@ -207,6 +207,13 @@ end subroutine
 subroutine genwfnr(fout,lpmat)
 use modmain
 use mod_seceqn
+
+#ifdef _DUMP_spinor_ud_
+#ifdef _HDF5_
+USE mod_hdf5
+#endif /* _HDF5_ */
+#endif /* _DUMP_spinor_ud_ */
+
 implicit none
 integer, intent(in) :: fout
 logical, intent(in) :: lpmat
@@ -219,6 +226,17 @@ complex(8), allocatable :: evecsvnrloc(:,:,:)
 complex(8), allocatable :: evecfdnrloc(:,:,:)
 complex(8), allocatable :: evec(:,:)
 logical, external :: bndint
+
+#ifdef _DUMP_spinor_ud_
+  CHARACTER(LEN=32) :: dbgfile
+#ifdef _HDF5_
+  LOGICAL :: exist
+#else
+  INTEGER :: dbgunit
+  CHARACTER(LEN=20) :: fmt
+#endif /* _HDF5_ */
+#endif /* _DUMP_spinor_ud_ */
+
 !
 !call gen_k_sym
 ! get energies of states in reduced part of BZ
@@ -483,9 +501,9 @@ if (wannier) then
   endif
   call timer_stop(1)
   if (wproc.and.fout.gt.0) then
-    write(fout,'("  Dielectric Wannier functions : ",L1)')wann_diel()
+~    write(fout,'("  Dielectric Wannier functions : ",L1)')wann_diel()
     write(fout,*)
-    write(fout,'("Done in ",F8.2," seconds")')timer_get_value(1)
+~    write(fout,'("Done in ",F8.2," seconds")')timer_get_value(1)
     call timestamp(fout)
     if (fout.ne.6) call flushifc(fout)
   endif
@@ -504,6 +522,54 @@ if (spinpol.and.tsveqn) then
     enddo
   enddo
   call mpi_grid_reduce(spinor_ud(1,1,1),2*nstsv*nkptnr,dims=(/dim_k/),all=.true.)
+
+#ifdef _DUMP_spinor_ud_
+
+  IF( mpi_grid_root() ) THEN
+
+#ifdef _HDF5_
+
+     ! For now, only rank 0 writes using serial hdf5
+     ! TODO: use MPI-IO (parallel hdf5)
+
+     dbgfile = "spinor_ud.hdf5"
+     INQUIRE( FILE=TRIM(dbgfile), EXIST=exist )
+
+     ! Create file and populate data structure
+     IF( .NOT. exist ) THEN
+        CALL hdf5_create_file( TRIM(dbgfile) )
+        CALL hdf5_create_group( TRIM(dbgfile), "/", "parameters" )
+     END IF
+
+     ! Write parameters
+     CALL hdf5_write( TRIM(dbgfile), "/parameters", "nstsv", nstsv )
+     CALL hdf5_write( TRIM(dbgfile), "/parameters", "nkptnr", nkptnr )
+
+     ! Write spinor_ud
+     CALL hdf5_write( TRIM(dbgfile), "/", "spinor_ud", spinor_ud(1,1,1), &
+                      (/ 2, nstsv, nkptnr /) )
+
+#else
+
+     dbgfile = "spinor_ud.dat"
+     dbgunit = 1000
+     OPEN( UNIT=dbgunit, FILE=TRIM(dbgfile) )
+     WRITE( dbgunit, '("# nstsv=", I4, "nkptnr=", I6)' ) nstsv, nkptnr
+     DO ik = 1, nkptnr
+        WRITE( dbgunit, '("# ikptnr=", I6, " istsv spinor_ud(:,istsv,ikptnr)")' ) ik
+        DO j = 1, nstsv
+           WRITE( dbgunit, '(I4, 2(1X,I1))' ) j, spinor_ud(1,j,ik), spinor_ud(2,j,ik)
+        END DO ! nstsv
+        WRITE( dbgunit, * )
+     END DO ! nkptnr
+     CLOSE( dbgunit )
+
+#endif /* _HDF5_ */
+
+  END IF ! mpi_grid_root
+
+#endif /* _DUMP_spinor_ud_ */
+
 endif  
 if (wproc.and.fout.gt.0) then
   write(fout,'("Done.")')
@@ -514,5 +580,30 @@ else
   deallocate(evecfdnrloc)
 endif
 end subroutine
+
+!--begin Patch memory leaks
+SUBROUTINE cleanup_nrkp
+  IMPLICIT NONE
+
+  IF( ALLOCATED( ngknr        ) ) DEALLOCATE( ngknr )
+  IF( ALLOCATED( igkignr      ) ) DEALLOCATE( igkignr )
+  IF( ALLOCATED( vgklnr       ) ) DEALLOCATE( vgklnr )
+  IF( ALLOCATED( vgkcnr       ) ) DEALLOCATE( vgkcnr )
+  IF( ALLOCATED( gknr         ) ) DEALLOCATE( gknr )
+  IF( ALLOCATED( tpgknr       ) ) DEALLOCATE( tpgknr )
+  IF( ALLOCATED( sfacgknr     ) ) DEALLOCATE( sfacgknr )
+  IF( ALLOCATED( ylmgknr      ) ) DEALLOCATE( ylmgknr )
+  IF( ALLOCATED( wfsvmtnrloc  ) ) DEALLOCATE( wfsvmtnrloc )
+  IF( ALLOCATED( wfsvitnrloc  ) ) DEALLOCATE( wfsvitnrloc )
+  IF( ALLOCATED( wanncnrloc   ) ) DEALLOCATE( wanncnrloc )
+  IF( ALLOCATED( pmatnrloc    ) ) DEALLOCATE( pmatnrloc )
+  IF( ALLOCATED( evalsvnr     ) ) DEALLOCATE( evalsvnr )
+  IF( ALLOCATED( occsvnr      ) ) DEALLOCATE( occsvnr )
+  IF( ALLOCATED( spinor_ud    ) ) DEALLOCATE( spinor_ud )
+  
+  RETURN
+END SUBROUTINE cleanup_nrkp
+!--end Patch memory leaks
+
 
 end module
