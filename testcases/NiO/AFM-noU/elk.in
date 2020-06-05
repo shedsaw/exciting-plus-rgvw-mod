@@ -1,0 +1,212 @@
+notes
+ NiO antiferromagnetic, LSDA-PW92, no Hubbard U
+ 8x8x8 k-mesh, 10 G-shells, 20 empty states
+
+
+tasks
+  0
+  801
+
+! Pick the tasks from this list.
+! Ground state has to be computed first.
+!  0   (gndstate)
+!  822 (bandrlm)
+!  811 (dosrlm)
+! After verifying everything is correct, generate Wannier functions
+!  1   (resume gndstate with wannier = .TRUE.)
+!  822 (bandrlm, wannier basis)
+!  811 (dosrlm, wannier basis)
+! Optionally, enable the wannier_plot block and plot the wannier orbitals
+!  863 (wann_plot_3d)
+! Check if both bases give the same thing, then run cRPA to get U
+!  801 (crpa)
+
+! Frequently changed parameters
+
+ngridk
+  8  8  8
+
+tgqsh
+.TRUE.                                  : tgqsh
+
+gqsh
+ 10                                     : gqsh
+
+nempty
+  20
+
+
+!---Wannier block begin
+
+wannier
+.TRUE.                             : wannier
+.FALSE.                            : wann_add_poco
+ 4 2 2                             : wann_natom, wann_norbgrp, wann_ntype
+ 10                                : wann_norb(orbgrp=1)   (group 1 Ni-3d)
+ 5 6 7 8 9 5 6 7 8 9               : wann_iorb(1,:,orbgrp=1) (d orbitals)
+ 1 1 1 1 1 2 2 2 2 2               : wann_iorb(2,:,orbgrp=1) (spin up+dn)
+ 1 1 1 1 1 1 1 1 1 1               : wann_iorb(3,:,orbgrp=1) (all window 1)
+ 6                                 : wann_norb(orbgrp=2)   (group 2 O-2p)
+ 2 3 4 2 3 4                       : wann_iorb(1,:,orbgrp=2) (p orbitals)
+ 1 1 1 2 2 2                       : wann_iorb(2,:,orbgrp=2) (spin up+dn)
+ 2 2 2 2 2 2                       : wann_iorb(3,:,orbgrp=2) (all window 2)
+ 15 24 0.0                         : wann_eint(1:2,window=1), wann_v (band idx)
+  9 14 0.0                         : wann_eint(1:2,window=2), wann_v (band idx)
+ 1 1                               : wann_iprj(1:2,atom=1) (Ni1, orbgrp 1)
+ 2 1                               : wann_iprj(1:2,atom=2) (Ni2, orbgrp 1)
+ 3 2                               : wann_iprj(1:2,atom=3) (O1, orbgrp 2)
+ 4 2                               : wann_iprj(1:2,atom=4) (O2, orbgrp 2)
+
+wann_exclude_eint
+ 0.0 0.0                                : wann_exclude_eint(1:2,window=1)
+ 0.0 0.0                                : wann_exclude_eint(1:2,window=2)
+
+!! Ni1
+!wannier_plot
+!  0.0   0.0   0.0                       : zero3d(:)
+! 20.0   0.0   0.0                       : bound3d(:,1)
+!  0.0  20.0   0.0                       : bound3d(:,1)
+!  0.0   0.0  20.0                       : bound3d(:,1)
+! 125 125 125                            : nrxyz(:)
+! 10 1                                   : nwfplot, firstwf
+
+!! Ni2
+!wannier_plot
+! 7.926645204  7.926645204  7.926645204  : zero3d(:)
+! 20.0   0.0   0.0                       : bound3d(:,1)
+!  0.0  20.0   0.0                       : bound3d(:,1)
+!  0.0   0.0  20.0                       : bound3d(:,1)
+! 125 125 125                            : nrxyz(:)
+! 10 11                                  : nwfplot, firstwf
+
+!! O1
+!wannier_plot
+! 3.963322602  3.963322602  3.963322602  : zero3d(:)
+! 20.0   0.0   0.0                       : bound3d(:,1)
+!  0.0  20.0   0.0                       : bound3d(:,1)
+!  0.0   0.0  20.0                       : bound3d(:,1)
+! 125 125 125                            : nrxyz(:)
+! 6 21                                   : nwfplot, firstwf
+
+!! O2
+!wannier_plot
+! 11.889967806 11.889967806 11.889967806 : zero3d(:)
+! 20.0   0.0   0.0                       : bound3d(:,1)
+!  0.0  20.0   0.0                       : bound3d(:,1)
+!  0.0   0.0  20.0                       : bound3d(:,1)
+! 125 125 125                            : nrxyz(:)
+! 6 27                                   : nwfplot, firstwf
+
+
+!---Wannier block end
+
+!---Response block begin
+
+!vqm
+! 1                                      : nvq
+! 0 0 0                                  : vqm(:,1)
+
+vq0c
+  0.00001  0.00000  0.00000             : vq0c
+
+response_wann
+.FALSE.                                 : wannier_chi0_chi
+.FALSE.                                 : wannier_chi0_afm
+
+response_w
+ 1                                      : lr_nw
+ 0.0  0.0  0.1                          : lr_w0, lr_w1, lr_eta
+
+response_fxc                                
+ 0  1  0.0  0.0                         : fxctype, nfxca, fxca0, fxca1
+
+chi0_include_bands
+ 1 84                                   : chi0_include_bands(1:2)
+
+!---Response block end
+
+!---cRPA block begin (don't forget to also enable the following blocks:
+!---                  response_w, response_fxc, gqmax, chi0_include_bands,
+!---                  and disable the following block: vqm)
+
+screenu4
+.TRUE.                                  : screenu4
+
+chi0_exclude_bands
+ 9 24                                   : chi0_exclude_bands(1:2)
+
+megqwan_dist
+ 0.0  0.0                               : megqwan_mindist, megqwan_maxdist
+
+megqwan_include  ! Wannier orbitals included in target to calculate cRPA.
+ 32                                     : nwann_include
+ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 : iwann_include(:)
+
+!gmaxvr
+! 8.0                                    : gmaxvr
+
+!---cRPA block end
+
+
+! AFM configuration
+spinpol
+.TRUE.
+
+! Use LSDA-PW92
+xctype
+  3  0  0
+
+! Following the sample inputfile
+avec
+  1.0  0.5  0.5
+  0.5  1.0  0.5
+  0.5  0.5  1.0
+
+! This is double the normal unit cell
+scale
+  7.926645204
+
+! this is the relative path to the species files
+sppath
+  '../../species/'
+
+! Following the sample inputfile
+atoms
+   2                                    : nspecies
+'Ni.in'                                 : spfname
+   2                                    : natoms; atposl, bfcmt below
+    0.0    0.0    0.0    0.0   0.0  -2.0
+    0.5    0.5    0.5    0.0   0.0   2.0
+'O.in'                                  : spfname
+   2                                    : natoms; atposl, bfcmt below
+    0.25   0.25   0.25   0.0   0.0   0.0
+    0.75   0.75   0.75   0.0   0.0   0.0
+
+! The RMS effective potential difference starts oscillating below 1e-5
+epspot
+ 1.D-5
+
+!vkloff
+!  0.5  0.5  0.5
+
+reducek
+  1
+
+! Following the sample inputfile, halve the magnetic field for quick convergence
+reducebf
+  0.5
+
+plot1d
+  12  100                              : nvp1d, npp1d
+   0.5000000000     0.0000000000     0.5000000000     M
+   0.0000000000     0.0000000000     0.0000000000     GAMMA
+   0.0000000000    -0.5000000000    -0.5000000000     Y
+   0.1875000000    -0.3437500000    -0.3437500000     F
+   0.5000000000     0.0000000000     0.0000000000     L
+   0.5000000000     0.1875000000     0.8125000000     I1
+   0.5000000000     0.5000000000     0.5000000000     Z
+   0.8125000000     0.3437500000     0.3437500000     F1
+   0.0000000000    -0.5000000000    -0.5000000000     Y
+   0.0000000000    -0.6562500000    -0.3437500000     X1
+   0.0000000000     0.0000000000     0.0000000000     GAMMA
+   0.0000000000    -0.5000000000     0.0000000000     N
