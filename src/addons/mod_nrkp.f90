@@ -501,9 +501,9 @@ if (wannier) then
   endif
   call timer_stop(1)
   if (wproc.and.fout.gt.0) then
-~    write(fout,'("  Dielectric Wannier functions : ",L1)')wann_diel()
+    write(fout,'("  Dielectric Wannier functions : ",L1)')wann_diel()
     write(fout,*)
-~    write(fout,'("Done in ",F8.2," seconds")')timer_get_value(1)
+    write(fout,'("Done in ",F8.2," seconds")')timer_get_value(1)
     call timestamp(fout)
     if (fout.ne.6) call flushifc(fout)
   endif
