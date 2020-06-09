@@ -1,4 +1,4 @@
-subroutine genmegqblh(iq,ikloc,ngknr1,ngknr2,igkignr1,igkignr2,wfsvmt1,wfsvmt2,&
+subroutine genmegqblh_orig(iq,ikloc,ngknr1,ngknr2,igkignr1,igkignr2,wfsvmt1,wfsvmt2,&
   &wfsvit1,wfsvit2)
 use modmain
 use mod_addons_q
@@ -205,4 +205,4 @@ deallocate(wfir1)
 call papi_timer_stop(pt_megqblh)
 
 return
-end subroutine genmegqblh
+end subroutine genmegqblh_orig

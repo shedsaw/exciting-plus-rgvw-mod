@@ -74,6 +74,13 @@ INTEGER, ALLOCATABLE :: idxtranblhloc(:,:)
 !   3-rd index : k-point
 complex(8), allocatable :: megqblh(:,:,:)
 
+!--begin Convert to true ZGEMM
+
+  ! Debug variable to compare original and new implementation
+  COMPLEX(KIND((0.D0,1.D0))), ALLOCATABLE :: megqblh_new(:,:,:)
+
+!--end Convert to true ZGEMM
+
 ! adjoint matrix elements <n,k-q|e^{-i(G+q)x}|n'k> in the Bloch basis
 complex(8), allocatable :: amegqblh(:,:,:)
 
@@ -160,10 +167,19 @@ integer np
 character*100 :: qnm,qdir,fout
 integer, allocatable :: waninc(:)
 
-#ifdef _DEBUG_bmegqblh_
-  INTEGER :: dbgunit
+#if defined(_DEBUG_bmegqblh_) || defined(_DEBUG_megqblh_)
   CHARACTER(LEN=32) :: dbgfile
-#endif // _DEBUG_bmegqblh_
+
+#ifdef _DEBUG_bmegqblh_ 
+  INTEGER :: dbgunit1
+#endif /* _DEBUG_bmegqblh_ */
+
+#ifdef _DEBUG_megqblh_ 
+  INTEGER :: dbgunit2
+  REAL(KIND(1.D0)) :: maxerr
+#endif /* _DEBUG_megqblh_ */
+
+#endif /* _DEBUG_bmegqblh_ || _DEBUG_megqblh_ */
 
 call papi_timer_start(pt_megq)
 
@@ -182,12 +198,20 @@ endif
 
 #ifdef _DEBUG_bmegqblh_
   ! Note: iproc is the global MPI rank as defined in mod_mpi_grid
-  dbgunit = 1000 + iproc
+  dbgunit1 = 1000 + iproc
   WRITE( dbgfile, '(A,I3.3)' ) 'bmegqblh.', iproc
-  OPEN( UNIT=dbgunit, FILE=TRIM(dbgfile), ACTION='write', POSITION='append' )
-  WRITE( dbgunit, * ) '#bmegqblh(1,:,:) iproc=', iproc, 'nstsv**2=', nstsv**2
-  WRITE( dbgunit, '(A)' ) 'count ikloc iq    iband i     n1    i+n1-1'
-#endif // _DEBUG_bmegqblh_
+  OPEN( UNIT=dbgunit1, FILE=TRIM(dbgfile), ACTION='write', POSITION='append' )
+  WRITE( dbgunit1, * ) '#bmegqblh(1,:,:) iproc=', iproc, 'nstsv**2=', nstsv**2
+  WRITE( dbgunit1, '(A)' ) 'count ikloc iq    iband i     n1    i+n1-1'
+#endif /* _DEBUG_bmegqblh_ */
+
+#ifdef _DEBUG_megqblh_
+  dbgunit2 = 2000 + iproc
+  WRITE( dbgfile, '(A,I3.3)' ) 'genmegqblh.', iproc
+  OPEN( UNIT=dbgunit2, FILE=TRIM(dbgfile), ACTION='write', POSITION='append' )
+  WRITE( dbgunit2, * ) 'MAXVAL(ABS(megqblh_new(:,:,:)-megqblh(:,:,:)) iproc=', iproc
+  WRITE( dbgunit2, '(A)' ) 'iq    ikloc maxerr'
+#endif /* _DEBUG_megqblh_ */
 
 if (wproc) then
   write(150,*)
@@ -282,6 +306,13 @@ endif
 if (allocated(megqblh)) deallocate(megqblh)
 allocate(megqblh(nstsv*nstsv,ngq(iq),nkptnrloc))
 megqblh(:,:,:)=zzero
+
+#ifdef _DEBUG_megqblh_
+  IF( ALLOCATED( megqblh_new ) ) DEALLOCATE( megqblh_new )
+  ALLOCATE( megqblh_new( nstsv*nstsv, ngq(iq), nkptnrloc) )
+  megqblh_new(:,:,:) = zzero
+#endif /* _DEBUG_megqblh_ */
+
 allocate(wfsvmt_jk(lmmaxapw,nufrmax,natmtot,nspinor,nstsv))
 allocate(wfsvit_jk(ngkmax,nspinor,nstsv))
 allocate(igkignr_jk(ngkmax))
@@ -310,9 +341,21 @@ do ikstep=1,nkstep
 ! compute matrix elements  
   call timer_start(2)
   if (ikstep.le.nkptnrloc) then
-    call genmegqblh(iq,ikstep,ngknr(ikstep),ngknr_jk,igkignr(1,ikstep),&
+    call genmegqblh_orig(iq,ikstep,ngknr(ikstep),ngknr_jk,igkignr(1,ikstep),&
       igkignr_jk,wfsvmtnrloc(1,1,1,1,1,ikstep),wfsvmt_jk,&
       wfsvitnrloc(1,1,1,ikstep),wfsvit_jk)
+
+#ifdef _DEBUG_megqblh_
+    ! This subroutine writes output to module variable megqblh_new
+    CALL genmegqblh_new( iq, ikstep, ngknr(ikstep), ngknr_jk, &
+                         igkignr(1,ikstep), igkignr_jk, &
+                         wfsvmtnrloc(1,1,1,1,1,ikstep), wfsvmt_jk, &
+                         wfsvitnrloc(1,1,1,ikstep), wfsvit_jk )
+    ! Compare results
+    maxerr = MAXVAL( ABS( megqblh_new(:,:,:) - megqblh(:,:,:) ))
+    WRITE( dbgunit2, '(2I6,F18.6)' ) iq, ikstep, maxerr
+#endif /* _DEBUG_megqblh_ */
+
   endif !ikstep.le.nkptnrloc
   call timer_stop(2)
 enddo !ikstep
@@ -416,9 +459,14 @@ if (wproc) then
 endif
 
 #ifdef _DEBUG_bmegqblh_
-  CALL flushifc( dbgunit )
-  CLOSE( dbgunit )
-#endif // _DEBUG_bmegqblh_
+  CALL flushifc( dbgunit1 )
+  CLOSE( dbgunit1 )
+#endif /* _DEBUG_bmegqblh_ */
+
+#ifdef _DEBUG_megqblh_
+  CALL flushifc( dbgunit2 )
+  CLOSE( dbgunit2 )
+#endif /* _DEBUG_megqblh_ */
 
 return
 end subroutine
@@ -502,6 +550,9 @@ SUBROUTINE cleanup_expigqr
   IF( ALLOCATED(ntranblhloc)    ) DEALLOCATE( ntranblhloc )
   IF( ALLOCATED(idxtranblhloc)  ) DEALLOCATE( idxtranblhloc )
   IF( ALLOCATED(megqblh)        ) DEALLOCATE( megqblh )
+#ifdef _DEBUG_megqblh_
+  IF( ALLOCATED(megqblh_new)    ) DEALLOCATE( megqblh_new )
+#endif /* _DEBUG_megqblh_ */
   IF( ALLOCATED(amegqblh)       ) DEALLOCATE( amegqblh )
   IF( ALLOCATED(namegqblh)      ) DEALLOCATE( namegqblh )
   IF( ALLOCATED(bamegqblh)      ) DEALLOCATE( bamegqblh )
