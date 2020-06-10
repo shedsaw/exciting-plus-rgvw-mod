@@ -24,16 +24,18 @@ logical l1
 complex(8), allocatable :: wftmp1(:,:)
 complex(8), allocatable :: wftmp2(:,:)
 complex(8), allocatable :: wfir1(:)
-complex(8) b1(lmmaxapw*nufrmax),b2(lmmaxapw*nufrmax) ! TODO: convert to matrices
+
+!--begin Convert to true ZGEMM
+  INTEGER :: nmt                    ! Number of muffin-tin elements
+  INTEGER, PARAMETER :: nb = 64     ! Block size for ZGEMM batching
+  INTEGER :: k1, k2, ki, nsize      ! Dummy variables for batching
+  COMPLEX(KIND((0.D0,1.D0))), &
+    DIMENSION( lmmaxapw*nufrmax, nb, natmtot, ngq(iq) ) :: b1, b2
+!--end Convert to true ZGEMM
 
 #ifdef _DEBUG_bmegqblh_
   INTEGER :: dbgcnt, dbgunit
 #endif /* _DEBUG_bmegqblh_ */
-
-#ifdef _DEBUG_megqblh_
-  INTEGER :: dbgunit
-  REAL(KIND(1.D0)) :: maxerr
-#endif /* _DEBUG_megqblh_ */
 
 INTEGER :: idxhiband, iband, ntran, idxtran
 EXTERNAL :: zcopy
@@ -74,48 +76,106 @@ do ispn1=1,nspinor
      CYCLE
   END IF
 
+!--begin Convert to true ZGEMM
+
+  call timer_start(3)
+  call papi_timer_start(pt_megqblh_mt)
+
+  ! Note that the loop order has been switched
+  ! such that iband loop is now the innermost loop
+
+  ! Number of muffin-tin elements
+  nmt = lmmaxapw*nufrmax
+
+  ! Batching by block size nb
+  DO k1 = 1, idxhiband, nb
+     k2 = MIN( iband, k1+nb-1 )
+     nsize = k2 - k1 + 1
+
+     !$OMP PARALLEL PRIVATE(b1,b2)
+     b1(:,:,:,:) = zzero
+     b2(:,:,:,:) = zzero
+
+     !$OMP DO COLLAPSE(3) PRIVATE(iband,i,ist1,l1)
+     do ig=1,ngq(iq)
+        do ias=1,natmtot
+
+           ! Loop for a single batch
+           DO ki = 1, nsize
+
+              iband = k1 + ki - 1
+              i = idxtranblhloc( iband, ikloc )
+              ist1 = bmegqblh(1,i,ikloc)
+
+              ! TODO: Dump bmegqblh and inspect, then get rid of the l1 check
+              l1=.true.
+              if (spinpol) then
+                 if (spinor_ud(ispn1,ist1,ik).eq.0) l1=.false.
+              endif
+              if (l1) then
+                 ! precompute muffin-tin part of \psi_1^{*}(r)*e^{-i(G+q)r}
+                 b1(:,ki,ias,ig) = DCONJG( wfsvmt1(:,ias,ispn1,ist1) * &
+                                           sfacgq(ig,ias) )
+              END IF ! l1
+
+           END DO ! ki
+
+        END DO ! ias
+     END DO ! ig
+     !$OMP END DO
+
+     ! Original code for historical purpose
+     !do j=1,ngntuju(ic,ig)
+     !  b2(igntuju(2,j,ic,ig))=b2(igntuju(2,j,ic,ig))+&
+     !    &b1(igntuju(1,j,ic,ig))*gntuju(j,ic,ig)
+     !enddo
+
+     !$OMP DO COLLAPSE(2) PRIVATE(ic)
+     do ig=1,ngq(iq)
+        do ias=1,natmtot
+           ic = ias2ic(ias)
+
+           ! Perform ZGEMM by batch
+           CALL zgemm( 'N', 'N', nmt, nsize, nmt, &
+                       zone,  gntuju(1:nmt,1:nmt,ic,ig), nmt, &
+                              b1(1:nmt,1:nsize,ias,ig),  nmt, &
+                       zzero, b2(1:nmt,1:nsize,ias,ig),  nmt )
+
+        enddo !ias
+     enddo !ig
+     !$OMP END DO
+     !$OMP END PARALLEL
+
+  END DO ! k1
+
+  call timer_stop(3)
+  call papi_timer_stop(pt_megqblh_mt)
+
   ! Start the bounded do loop
   DO iband = 1, idxhiband
 
 ! left <bra| state 
+     wftmp1=zzero
+
      ! The starting point of the index "i" for accessing bmegqblh(:,i,:)
      ! for each iband and ikloc was stored as idxtranblhloc
      i = idxtranblhloc( iband, ikloc )
      ist1 = bmegqblh(1,i,ikloc)
 
-    wftmp1=zzero
-    l1=.true.
-    if (spinpol) then
-      if (spinor_ud(ispn1,ist1,ik).eq.0) l1=.false.
-    endif
-    if (l1) then
-      call timer_start(3)
-      call papi_timer_start(pt_megqblh_mt)
+     ! Fetch muffin-tin part
+     ! TODO: Split wftmp1 into muffin-tin and interstitial parts
+     wftmp1( (ias-1)*nmt+1:ias*nmt, ig ) = b2( :, iband, ias, ig )
 
-      ! TODO: insert OMP directives here
-      do ig=1,ngq(iq)
-! precompute muffin-tin part of \psi_1^{*}(r)*e^{-i(G+q)r}
-        do ias=1,natmtot
-          b1=dconjg(wfsvmt1(:,ias,ispn1,ist1)*sfacgq(ig,ias))
-          ic=ias2ic(ias)
-          b2=zzero
+     ! Same as above
+     l1=.true.
+     if (spinpol) then
+        if (spinor_ud(ispn1,ist1,ik).eq.0) l1=.false.
+     endif
 
-          ! Original code for historical purpose
-          !do j=1,ngntuju(ic,ig)
-          !  b2(igntuju(2,j,ic,ig))=b2(igntuju(2,j,ic,ig))+&
-          !    &b1(igntuju(1,j,ic,ig))*gntuju(j,ic,ig)
-          !enddo
+     if (l1) then
 
-          ! TODO: convert to true ZGEMM
-          call zgemm('N','N',lmmaxapw*nufrmax,1,lmmaxapw*nufrmax,&
-            &zone,gntuju(1,1,ic,ig),lmmaxapw*nufrmax,b1,lmmaxapw*nufrmax,&
-            &zzero,b2,lmmaxapw*nufrmax)
-          wftmp1((ias-1)*lmmaxapw*nufrmax+1:ias*lmmaxapw*nufrmax,ig)=b2(:)
+!--end Convert to true ZGEMM
 
-        enddo !ias
-      enddo !ig  
-      call timer_stop(3)
-      call papi_timer_stop(pt_megqblh_mt)
 ! interstitial part
       call papi_timer_start(pt_megqblh_it)
       call timer_start(4)

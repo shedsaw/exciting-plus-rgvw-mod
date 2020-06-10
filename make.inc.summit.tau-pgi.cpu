@@ -10,13 +10,14 @@ COMPILER = tau-pgi
 CPP_OPTS = -Mpreprocess
 
 # Add your custom preprocessor defines here
-CPP_OPTS += -D_DEBUG_megqblh_
+CPP_OPTS += -D_DEBUG_megqblh_ -D_DEBUG_bmegqblh_ -D_DUMP_spinor_ud_
 
 # Common compile time options
 F90_OPTS = $(CPP_OPTS)
 
 # Add your common compile time options here
 F90_OPTS += -Minfo=ftn,loop,opt,mp,par,vect # Show optimizer log
+F90_OPTS += -Mstack_arrays
 
 #==============================================================================
 # MPI
