@@ -353,7 +353,7 @@ do ikstep=1,nkstep
                          wfsvitnrloc(1,1,1,ikstep), wfsvit_jk )
     ! Compare results
     maxerr = MAXVAL( ABS( megqblh_new(:,:,:) - megqblh(:,:,:) ))
-    WRITE( dbgunit2, '(2I6,F18.6)' ) iq, ikstep, maxerr
+    WRITE( dbgunit2, '(2I6,G18.6)' ) iq, ikstep, maxerr
 #endif /* _DEBUG_megqblh_ */
 
   endif !ikstep.le.nkptnrloc
