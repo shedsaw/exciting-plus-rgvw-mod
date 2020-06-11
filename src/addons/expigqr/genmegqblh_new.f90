@@ -137,9 +137,15 @@ do ispn1=1,nspinor
 
            ! Perform ZGEMM by batch
            CALL zgemm( 'N', 'N', nmt, nsize, nmt, &
-                       zone,  gntuju(1:nmt,1:nmt,ic,ig), nmt, &
-                              b1(1:nmt,1:nsize,ias,ig),  nmt, &
-                       zzero, b2(1:nmt,1:nsize,ias,ig),  nmt )
+                       zone,  gntuju(1,1,ic,ig), nmt, &
+                              b1(1,1,ias,ig),    nmt, &
+                       zzero, b2(1,1,ias,ig),    nmt )
+
+           ! Note: this one generates implicit copyin and copyout
+           !CALL zgemm( 'N', 'N', nmt, nsize, nmt, &
+           !             zone,  gntuju(1:nmt,1:nmt,ic,ig), nmt, &
+           !                    b1(1:nmt,1:nsize,ias,ig),  nmt, &
+           !             zzero, b2(1:nmt,1:nsize,ias,ig),  nmt )
 
         enddo !ias
      enddo !ig
@@ -151,7 +157,7 @@ do ispn1=1,nspinor
   call timer_stop(3)
   call papi_timer_stop(pt_megqblh_mt)
 
-  ! Start the bounded do loop
+  ! Start the bounded do loop for each band
   DO iband = 1, idxhiband
 
 ! left <bra| state 
@@ -162,10 +168,6 @@ do ispn1=1,nspinor
      i = idxtranblhloc( iband, ikloc )
      ist1 = bmegqblh(1,i,ikloc)
 
-     ! Fetch muffin-tin part
-     ! TODO: Split wftmp1 into muffin-tin and interstitial parts
-     wftmp1( (ias-1)*nmt+1:ias*nmt, ig ) = b2( :, iband, ias, ig )
-
      ! Same as above
      l1=.true.
      if (spinpol) then
@@ -173,6 +175,14 @@ do ispn1=1,nspinor
      endif
 
      if (l1) then
+
+     ! Fetch muffin-tin part from b2 and store it into wftmp1
+     ! TODO: Split wftmp1 into muffin-tin and interstitial parts
+     DO ig = 1, ngq(iq)
+        DO ias = 1, natmtot
+           wftmp1( (ias-1)*nmt+1:ias*nmt, ig ) = b2( :, iband, ias, ig )
+        END DO ! ias
+     END DO ! ig
 
 !--end Convert to true ZGEMM
 
@@ -199,7 +209,9 @@ do ispn1=1,nspinor
       enddo
       call timer_stop(4)      
       call papi_timer_stop(pt_megqblh_it)
+
     endif !l1
+
     call timer_start(5)
 
 #ifdef _DEBUG_bmegqblh_
