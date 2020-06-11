@@ -89,10 +89,10 @@ do ispn1=1,nspinor
 
   ! Batching by block size nb
   DO k1 = 1, idxhiband, nb
-     k2 = MIN( iband, k1+nb-1 )
+     k2 = MIN( idxhiband, k1+nb-1 )
      nsize = k2 - k1 + 1
 
-     !$OMP PARALLEL PRIVATE(b1,b2)
+     !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(b1,b2)
      b1(:,:,:,:) = zzero
      b2(:,:,:,:) = zzero
 

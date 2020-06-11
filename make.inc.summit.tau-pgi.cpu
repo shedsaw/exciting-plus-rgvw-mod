@@ -16,8 +16,8 @@ CPP_OPTS += -D_DEBUG_megqblh_ -D_DEBUG_bmegqblh_ -D_DUMP_spinor_ud_
 F90_OPTS = $(CPP_OPTS)
 
 # Add your common compile time options here
-F90_OPTS += -Minfo=ftn,loop,opt,mp,par,vect # Show optimizer log
-F90_OPTS += -Mstack_arrays
+F90_OPTS += -Minfo=ftn,loop,opt,mp,par,vect               # Show optimizer log
+F90_OPTS += -Mstack_arrays                # Use the stack for automatic arrays
 
 #==============================================================================
 # MPI
@@ -55,6 +55,11 @@ F90_OPTS += $(OMP_OPTS)
 # Compiler and linker options
 #==============================================================================
 
+# Profiling with no optimizations
+F90_OPTS += -g -O0 -Minform=warn
+F90_LINK_OPTS = $(F90_OPTS)
+EXE_SFX = dbgprof
+
 # Profiling with equivalent options to '-O2'
 # Note: don't use '-Mpfi', it is incompatible with '-mp' and '-fpic'
 # Note: TAU automatically adds '-Minstrument'
@@ -71,13 +76,13 @@ F90_OPTS += $(OMP_OPTS)
 # Profiling with equivalent options to '-O2'
 # Note: don't use '-Mpfi', it is incompatible with '-mp' and '-fpic'
 # Note: TAU automatically adds '-Minstrument'
-F90_OPTS += -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn
-F90_LINK_OPTS = $(F90_OPTS) -fpic
-EXE_SFX = prof
+#F90_OPTS += -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn
+#F90_LINK_OPTS = $(F90_OPTS) -fpic
+#EXE_SFX = prof
 
 # Profiling, fully optimized
 # TODO: test with PGI 20.1
-#F90_OPTS += -fast -Munroll -Mnoinline -Minform=warn
+#F90_OPTS += -gopt -fast -Munroll -Mnoinline -Minform=warn
 #F90_LINK_OPTS = $(F90_OPTS) -fpic
 #EXE_SFX = fastprof
 

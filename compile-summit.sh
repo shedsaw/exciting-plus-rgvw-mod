@@ -24,7 +24,8 @@ tasklist() {
 
 # TODO: accomodate multiple compiler versions and extract them automatically
 IBMVER="IBM XL 16.1.1-5 (default compiler)"
-PGIVER="PGI 19.9" # ", 20.1"
+#PGIVER="PGI 19.9" # ", 20.1"
+PGIVER="PGI 20.1"
 compilers() {
   echo "On Summit, Exciting-Plus has been tested with the following compilers:"
   echo "  ibm   ${IBMVER} (default compiler)"
@@ -226,11 +227,13 @@ case ${COMPILER} in
     # TODO: Resolve ticket #419691 and test PGI 20.1
     getxlvars # for ESSL
     #getgccvars
-    module load pgi/19.9
+    #module load pgi/19.9
+    module load pgi/20.1
     export COMPILERVER="${PGIVER}"
     export TAUVER="2.29.1"
     module load tau/${TAUVER}
-    export TAU_MAKEFILE="${TAU_DIR}/lib/Makefile.tau-pgi_19.9-papi-mpi-pgi"
+    #export TAU_MAKEFILE="${TAU_DIR}/lib/Makefile.tau-pgi_19.9-papi-mpi-pgi"
+    export TAU_MAKEFILE="${TAU_DIR}/lib/Makefile.tau-pgi_20.1-papi-mpi-pgi"
     module load papi
     #source ./summit-gccvars.sh
     ;;

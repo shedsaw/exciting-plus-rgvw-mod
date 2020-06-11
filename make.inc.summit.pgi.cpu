@@ -10,13 +10,15 @@ COMPILER = pgi
 CPP_OPTS = -Mpreprocess
 
 # Add your custom preprocessor defines here
-#CPP_OPTS +=
+CPP_OPTS += -D_DEBUG_megqblh_ -D_DEBUG_bmegqblh_ -D_DUMP_spinor_ud_
 
 # Common compile time options
 F90_OPTS = $(CPP_OPTS)
 
 # Add your common compile time options here
-#F90_OPTS += -Minfo=ftn,loop,opt,mp,par,vect # Show optimizer log
+F90_OPTS += -Minfo=ftn,loop,opt,mp,par,vect               # Show optimizer log
+F90_OPTS += -Mstack_arrays                # Use the stack for automatic arrays
+
 
 #==============================================================================
 # MPI
@@ -70,14 +72,14 @@ F90_OPTS_SERIAL = $(filter-out $(OMP_OPTS),$(filter-out $(MPI_CPP_OPTS),$(F90_OP
 
 # Debugging with extra checks
 # (Don't forget to enable core dump generation using `ulimit -c unlimited`)
-#F90_OPTS += -g -O0 -Minform=warn -Mbounds -traceback
-#F90_LINK_OPTS = $(F90_OPTS)
-#EXE_SFX = dbgchk
+F90_OPTS += -g -O0 -Minform=warn -Mbounds -traceback
+F90_LINK_OPTS = $(F90_OPTS)
+EXE_SFX = dbgchk
 
 # Optimized build with equivalent options to '-O2'
-F90_OPTS += -gopt -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn
-F90_LINK_OPTS = $(F90_OPTS) -fpic
-EXE_SFX = opt
+#F90_OPTS += -gopt -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn
+#F90_LINK_OPTS = $(F90_OPTS) -fpic
+#EXE_SFX = opt
 
 # Profiling
 # Note: don't use '-Mpfi', it is incompatible with '-mp' and '-fpic'
