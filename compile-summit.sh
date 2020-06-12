@@ -2,7 +2,7 @@
 
 about() {
   echo "Exciting-Plus compile script for Summit (ORNL)"
-  echo "Last edited: May 6, 2020 (WYP)"
+  echo "Last edited: Jun 12, 2020 (WYP)"
 }
 
 # Check whether script is executed from Summit login node
@@ -24,7 +24,6 @@ tasklist() {
 
 # TODO: accomodate multiple compiler versions and extract them automatically
 IBMVER="IBM XL 16.1.1-5 (default compiler)"
-#PGIVER="PGI 19.9" # ", 20.1"
 PGIVER="PGI 20.1"
 compilers() {
   echo "On Summit, Exciting-Plus has been tested with the following compilers:"
@@ -192,7 +191,7 @@ case ${COMPILER} in
   pgi)
     getxlvars
     #getgccvars
-    module load pgi
+    module load pgi/20.1
     export COMPILERVER="${PGIVER}"
     #source ./summit-gccvars.sh
     ;;
