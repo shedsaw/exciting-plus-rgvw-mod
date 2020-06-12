@@ -29,13 +29,14 @@ complex(8), allocatable :: wfir1(:)
   INTEGER :: nmt                    ! Number of muffin-tin elements
   INTEGER, PARAMETER :: nb = 64     ! Block size for ZGEMM batching
   INTEGER :: k1, k2, ki, nsize      ! Dummy variables for batching
+  COMPLEX(KIND((0.D0,1.D0))), DIMENSION( lmmaxapw*nufrmax, nb ) :: b1, b2
   COMPLEX(KIND((0.D0,1.D0))), &
-    DIMENSION( lmmaxapw*nufrmax, nb, natmtot, ngq(iq) ) :: b1, b2
+    DIMENSION( lmmaxapw*nufrmax, nb, natmtot, ngq(iq) ) :: wftmp1mt
 !--end Convert to true ZGEMM
 
-#ifdef _DEBUG_bmegqblh_
-  INTEGER :: dbgcnt, dbgunit
-#endif /* _DEBUG_bmegqblh_ */
+#if defined(_DEBUG_bmegqblh_) || defined(_DEBUG_megqblh_)
+  INTEGER :: dbgcnt1, dbgcnt2, dbgunit1, dbgunit2
+#endif /* _DEBUG_bmegqblh_ || _DEBUG_megqblh_ */
 
 INTEGER :: idxhiband, iband, ntran, idxtran
 EXTERNAL :: zcopy
@@ -54,16 +55,18 @@ jk=idxkq(1,ik)
 igkq=idxkq(2,ik)
 
 #ifdef _DEBUG_bmegqblh_
-  dbgunit = 1000+iproc ! Make sure this matches the definition in mod_expigqr
-  dbgcnt=1
-  WRITE( dbgunit, '(A,I3,A,I5)' ) 'nmegqblh(ikloc=', ikloc, ') = ', nmegqblh(ikloc)
+  dbgunit1 = 1000 + iproc ! Make sure this matches the definition in mod_expigqr::genmegq()
+  dbgcnt1 = 1
+  WRITE( dbgunit1, '(A,I3,A,I5)' ) 'nmegqblh(ikloc=', ikloc, ') = ', nmegqblh(ikloc)
 #endif /* _DEBUG_bmegqblh_ */
+
+#ifdef _DEBUG_megqblh_
+  dbgunit2 = 2000 + iproc ! Make sure this matches the definition in mod_expigqr::genmegq()
+  dbgcnt2 = 1
+#endif
 
 do ispn1=1,nspinor
   if (expigqr22.eq.1) ispn2=ispn1
-
-  ! Load number of matching |ist2=n'> ket states for each <ist1=n| bra
-  IF( ltranconst ) ntran = ntranblhloc(ikloc)
 
   ! Convert to the corresponding ist1 loop in getmeidx() line 56-149
   ! as stored into idxhibandblh(ikloc=1:nkptnr) at getmeidx() line 155,
@@ -92,13 +95,18 @@ do ispn1=1,nspinor
      k2 = MIN( idxhiband, k1+nb-1 )
      nsize = k2 - k1 + 1
 
-     !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(b1,b2)
-     b1(:,:,:,:) = zzero
-     b2(:,:,:,:) = zzero
+#ifdef _DEBUG_megqblh_
+     WRITE( dbgunit2, '(4(A,I4))' ) 'Batch ', dbgcnt2, ' start=', k1, ' end=', k2, ' nsize=', nsize
+     dbgcnt2 = dbgcnt2 + 1
+#endif /* _DEBUG_megqblh_ */
 
-     !$OMP DO COLLAPSE(3) PRIVATE(iband,i,ist1,l1)
+     !$OMP PARALLEL DO COLLAPSE(2) DEFAULT(SHARED) &
+     !$OMP   PRIVATE(ig,ias,ki,iband,i,ist1,ic,l1,b1,b2)
      do ig=1,ngq(iq)
         do ias=1,natmtot
+
+           b1(:,:) = zzero
+           b2(:,:) = zzero
 
            ! Loop for a single batch
            DO ki = 1, nsize
@@ -114,43 +122,43 @@ do ispn1=1,nspinor
               endif
               if (l1) then
                  ! precompute muffin-tin part of \psi_1^{*}(r)*e^{-i(G+q)r}
-                 b1(:,ki,ias,ig) = DCONJG( wfsvmt1(:,ias,ispn1,ist1) * &
+                 b1(:,ki) = DCONJG( wfsvmt1(:,ias,ispn1,ist1) * &
                                            sfacgq(ig,ias) )
               END IF ! l1
 
            END DO ! ki
 
-        END DO ! ias
-     END DO ! ig
-     !$OMP END DO
+           ! Original code for historical purpose
+           !do j=1,ngntuju(ic,ig)
+           !  b2(igntuju(2,j,ic,ig))=b2(igntuju(2,j,ic,ig))+&
+           !    &b1(igntuju(1,j,ic,ig))*gntuju(j,ic,ig)
+           !enddo
 
-     ! Original code for historical purpose
-     !do j=1,ngntuju(ic,ig)
-     !  b2(igntuju(2,j,ic,ig))=b2(igntuju(2,j,ic,ig))+&
-     !    &b1(igntuju(1,j,ic,ig))*gntuju(j,ic,ig)
-     !enddo
-
-     !$OMP DO COLLAPSE(2) PRIVATE(ic)
-     do ig=1,ngq(iq)
-        do ias=1,natmtot
            ic = ias2ic(ias)
 
            ! Perform ZGEMM by batch
+           ! Reminder: ZGEMM( transA, transB, M, N, K, alpha,
+           !                  A, lda, B, ldb, beta, C, ldc )
+           !           C := alpha*op(A)*op(B) + beta*C
+           ! nmt = lmmaxapw*nufrmax (see line 91)
+           ! nsize = number of bands per batch (maximum nb = 64, see line 30)
            CALL zgemm( 'N', 'N', nmt, nsize, nmt, &
                        zone,  gntuju(1,1,ic,ig), nmt, &
-                              b1(1,1,ias,ig),    nmt, &
-                       zzero, b2(1,1,ias,ig),    nmt )
+                              b1(1,1),           nmt, &
+                       zzero, b2(1,1),           nmt )
 
-           ! Note: this one generates implicit copyin and copyout
+           ! Note: this one is clearer but generates implicit copyin and copyout
            !CALL zgemm( 'N', 'N', nmt, nsize, nmt, &
            !             zone,  gntuju(1:nmt,1:nmt,ic,ig), nmt, &
-           !                    b1(1:nmt,1:nsize,ias,ig),  nmt, &
-           !             zzero, b2(1:nmt,1:nsize,ias,ig),  nmt )
+           !                    b1(1:nmt,1:nsize),  nmt, &
+           !             zzero, b2(1:nmt,1:nsize),  nmt )
+
+           ! Collect results into wftmp1mt
+           wftmp1mt(:,k1:k2,ias,ig) = b2(:,:)
 
         enddo !ias
      enddo !ig
-     !$OMP END DO
-     !$OMP END PARALLEL
+     !$OMP END PARALLEL DO
 
   END DO ! k1
 
@@ -180,7 +188,7 @@ do ispn1=1,nspinor
      ! TODO: Split wftmp1 into muffin-tin and interstitial parts
      DO ig = 1, ngq(iq)
         DO ias = 1, natmtot
-           wftmp1( (ias-1)*nmt+1:ias*nmt, ig ) = b2( :, iband, ias, ig )
+           wftmp1( (ias-1)*nmt+1:ias*nmt, ig ) = wftmp1mt( :, iband, ias, ig )
         END DO ! ias
      END DO ! ig
 
@@ -216,19 +224,22 @@ do ispn1=1,nspinor
 
 #ifdef _DEBUG_bmegqblh_
 IF( ntran > 0 ) THEN
-  WRITE( dbgunit, '(7(1X,I5))' ) dbgcnt, ikloc, iq, iband, i, ntran, i+ntran-1
-  dbgcnt = dbgcnt + 1
+  WRITE( dbgunit1, '(7(1X,I5))' ) dbgcnt1, ikloc, iq, iband, i, ntran, i+ntran-1
+  dbgcnt1 = dbgcnt1 + 1
 END IF
 #endif // _DEBUG_bmegqblh_
 
-    ! Note: seeing the pattern, this shouldn't happen, but just in case
-    IF( .NOT. ltranconst ) THEN
-       IF( iband == idxhiband ) THEN
-          ntran = nmegqblh(ikloc) - idxtranblhloc(idxhiband,ikloc) + 1
-       ELSE
-          ntran = idxtranblhloc(iband+1,ikloc) - idxtranblhloc(iband,ikloc)
-       END IF
-    END IF ! ltranconst
+  ! Load number of matching |ist2=n'> ket states for each <ist1=n| bra
+  IF( ltranconst ) THEN
+     ntran = ntranblhloc(ikloc)
+  ELSE
+     ! Note: seeing the pattern, this shouldn't happen, but just in case
+     IF( iband == idxhiband ) THEN
+        ntran = nmegqblh(ikloc) - idxtranblhloc(idxhiband,ikloc) + 1
+     ELSE
+        ntran = idxtranblhloc(iband+1,ikloc) - idxtranblhloc(iband,ikloc)
+     END IF
+  END IF ! ltranconst
 
 ! collect right |ket> states into matrix wftmp2
     ! Note: ntran can be zero (zero-trip loop)
@@ -268,7 +279,7 @@ END IF
  END DO ! iband; replaces do while loop i <= nmegqblh(ikloc)
 
 #ifdef _DEBUG_bmegqblh_
-     WRITE( dbgunit, '(A,I3)') 'highest band = ', idxhiband
+     WRITE( dbgunit1, '(A,I3)') 'highest band = ', idxhiband
 #endif // _DEBUG_bmegqblh_
 
 !--end Convert do while into bounded do loop
