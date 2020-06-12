@@ -1,4 +1,4 @@
-subroutine genmegqblh_new(iq,ikloc,ngknr1,ngknr2,igkignr1,igkignr2,wfsvmt1,wfsvmt2,&
+subroutine genmegqblh(iq,ikloc,ngknr1,ngknr2,igkignr1,igkignr2,wfsvmt1,wfsvmt2,&
   &wfsvit1,wfsvit2)
 use modmain
 use mod_addons_q
@@ -269,7 +269,7 @@ END IF
     ! in the Gordon Bell paper
     CALL zgemm( 'T', 'N', ntran, ngq(iq), wfsize, zone, &
                 wftmp2, wfsize, wftmp1, wfsize, zone, &
-                megqblh_new(i,1,ikloc), nstsv*nstsv )
+                megqblh(i,1,ikloc), nstsv*nstsv )
 
     ! No need to add n1 to i anymore to move on to the next <nk| bra
     ! since it is already stored as ntranblhloc
@@ -292,4 +292,4 @@ deallocate(wfir1)
 call papi_timer_stop(pt_megqblh)
 
 return
-end subroutine genmegqblh_new
+end subroutine genmegqblh

@@ -182,7 +182,7 @@ END IF
     ! in the Gordon Bell paper
     CALL zgemm( 'T', 'N', ntran, ngq(iq), wfsize, zone, &
                 wftmp2, wfsize, wftmp1, wfsize, zone, &
-                megqblh(i,1,ikloc), nstsv*nstsv )
+                megqblh_orig(i,1,ikloc), nstsv*nstsv )
 
     ! No need to add n1 to i anymore to move on to the next <nk| bra
     ! since it is already stored as ntranblhloc
