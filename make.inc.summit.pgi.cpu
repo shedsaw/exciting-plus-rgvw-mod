@@ -10,15 +10,17 @@ COMPILER = pgi
 CPP_OPTS = -Mpreprocess
 
 # Add your custom preprocessor defines here
-CPP_OPTS += -D_DEBUG_megqblh_ -D_DEBUG_bmegqblh_ -D_DUMP_spinor_ud_
+CPP_OPTS += -D_DEBUG_bmegqblh_ # Output debugging info related to bmegqblh
+CPP_OPTS += -D_DEBUG_megqblh_ # Output debugging info related to genmegqblh
+CPP_OPTS += -D_DUMP_spinor_ud_ # Dump spinor_ud when spinpol = .TRUE.
 
 # Common compile time options
 F90_OPTS = $(CPP_OPTS)
 
 # Add your common compile time options here
-F90_OPTS += -Minfo=ftn,loop,opt,mp,par,vect               # Show optimizer log
-F90_OPTS += -Mstack_arrays                # Use the stack for automatic arrays
-
+F90_OPTS += -Minfo=ftn,loop,opt,mp,par,vect # Show optimizer log
+#F90_OPTS += -Minfo=accel # Show OpenACC code generation log
+F90_OPTS += -Mstack_arrays # Use stack instead of heap for automatic arrays
 
 #==============================================================================
 # MPI
@@ -72,9 +74,9 @@ F90_OPTS_SERIAL = $(filter-out $(OMP_OPTS),$(filter-out $(MPI_CPP_OPTS),$(F90_OP
 
 # Debugging with extra checks
 # (Don't forget to enable core dump generation using `ulimit -c unlimited`)
-F90_OPTS += -g -O0 -Minform=warn -Mbounds -traceback
-F90_LINK_OPTS = $(F90_OPTS)
-EXE_SFX = dbgchk
+#F90_OPTS += -g -O0 -Minform=warn -Mbounds -traceback
+#F90_LINK_OPTS = $(F90_OPTS)
+#EXE_SFX = dbgchk
 
 # Optimized build with equivalent options to '-O2'
 #F90_OPTS += -gopt -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn
@@ -87,18 +89,18 @@ EXE_SFX = dbgchk
 #F90_LINK_OPTS = $(F90_OPTS) -fpic
 #EXE_SFX = prof
 
+## For PGI 20.1
 # Fully optimized build
 # Note: with PGI 19.9 and 19.10, for some reason using '-O2' or higher
 # (including '-fast' and '-fastsse') chokes on autoradmt.f90:39
 #     DO i = -1, 1
 #   (see OLCF ticket #419691)
 # This has been fixed in PGI 20.1
-#F90_OPTS += -fast -Munroll -Mnoinline -Minform=warn
-#F90_LINK_OPTS = $(F90_OPTS) -fpic
-#EXE_SFX = fast
+F90_OPTS += -fast -Munroll -Mnoinline -Minform=warn
+F90_LINK_OPTS = $(F90_OPTS) -fpic
+EXE_SFX = fast
 
 # Profiling, fully optimized
-# Note: make sure to use PGI 20.1, see above
 #F90_OPTS += -Minstrument -Mprof=ccff -fast -Munroll -Mnoinline -Minform=warn
 #F90_LINK_OPTS = $(F90_OPTS) -fpic
 #EXE_SFX = fastprof

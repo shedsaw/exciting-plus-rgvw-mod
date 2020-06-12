@@ -10,14 +10,17 @@ COMPILER = tau-pgi
 CPP_OPTS = -Mpreprocess
 
 # Add your custom preprocessor defines here
-CPP_OPTS += -D_DEBUG_megqblh_ -D_DEBUG_bmegqblh_ -D_DUMP_spinor_ud_
+CPP_OPTS += -D_DEBUG_bmegqblh_ # Output debugging info related to bmegqblh
+CPP_OPTS += -D_DEBUG_megqblh_ # Output debugging info related to genmegqblh
+CPP_OPTS += -D_DUMP_spinor_ud_ # Dump spinor_ud when spinpol = .TRUE.
 
 # Common compile time options
 F90_OPTS = $(CPP_OPTS)
 
 # Add your common compile time options here
-F90_OPTS += -Minfo=ftn,loop,opt,mp,par,vect               # Show optimizer log
-F90_OPTS += -Mstack_arrays                # Use the stack for automatic arrays
+F90_OPTS += -Minfo=ftn,loop,opt,mp,par,vect # Show optimizer log
+#F90_OPTS += -Minfo=accel # Show OpenACC code generation log
+F90_OPTS += -Mstack_arrays # Use stack instead of heap for automatic arrays
 
 #==============================================================================
 # MPI
@@ -56,9 +59,17 @@ F90_OPTS += $(OMP_OPTS)
 #==============================================================================
 
 # Profiling with no optimizations
-F90_OPTS += -g -O0 -Minform=warn
-F90_LINK_OPTS = $(F90_OPTS)
-EXE_SFX = dbgprof
+#F90_OPTS += -g -O0 -Minform=warn
+#F90_LINK_OPTS = $(F90_OPTS)
+#EXE_SFX = dbgprof
+
+## For PGI 19.9
+# Profiling with equivalent options to '-O2'
+# Note: don't use '-Mpfi', it is incompatible with '-mp' and '-fpic'
+# Note: TAU automatically adds '-Minstrument'
+#F90_OPTS += -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn
+#F90_LINK_OPTS = $(F90_OPTS) -fpic
+#EXE_SFX = prof
 
 # Profiling with equivalent options to '-O2'
 # Note: don't use '-Mpfi', it is incompatible with '-mp' and '-fpic'
@@ -67,24 +78,11 @@ EXE_SFX = dbgprof
 #F90_LINK_OPTS = $(F90_OPTS) -fpic
 #EXE_SFX = prof
 
-# Profiling with debug option to dump bmegqblh
-#CPP_OPTS += -D_DEBUG_bmegqblh_
-#F90_OPTS += -gopt -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn
-#F90_LINK_OPTS = $(F90_OPTS) -fpic
-#EXE_SFX = patch3-dumpvars
-
-# Profiling with equivalent options to '-O2'
-# Note: don't use '-Mpfi', it is incompatible with '-mp' and '-fpic'
-# Note: TAU automatically adds '-Minstrument'
-#F90_OPTS += -O -Munroll -Mlre -Mvect=simd -Mflushz -Mcache_align -Mnoinline -Minform=warn
-#F90_LINK_OPTS = $(F90_OPTS) -fpic
-#EXE_SFX = prof
-
+## For PGI 20.1
 # Profiling, fully optimized
-# TODO: test with PGI 20.1
-#F90_OPTS += -gopt -fast -Munroll -Mnoinline -Minform=warn
-#F90_LINK_OPTS = $(F90_OPTS) -fpic
-#EXE_SFX = fastprof
+F90_OPTS += -gopt -fast -Munroll -Mnoinline -Minform=warn
+F90_LINK_OPTS = $(F90_OPTS) -fpic
+EXE_SFX = fastprof
 
 #==============================================================================
 # BLAS and LAPACK
