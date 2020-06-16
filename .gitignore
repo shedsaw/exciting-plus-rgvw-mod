@@ -32,6 +32,7 @@
 # TAU intermediate files
 *.tau.inc~
 *.gomp.f90
+*.pomp.f90
 *.opari.f90
 *.inst.f90
 *.pp.f90
