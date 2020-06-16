@@ -191,7 +191,8 @@ case ${COMPILER} in
   pgi)
     getxlvars
     #getgccvars
-    module load pgi/20.1
+    module load pgi/19.9
+    #module load pgi/20.1
     export COMPILERVER="${PGIVER}"
     #source ./summit-gccvars.sh
     ;;
@@ -233,6 +234,7 @@ case ${COMPILER} in
     module load tau/${TAUVER}
     #export TAU_MAKEFILE="${TAU_DIR}/lib/Makefile.tau-pgi_19.9-papi-mpi-pgi"
     export TAU_MAKEFILE="${TAU_DIR}/lib/Makefile.tau-pgi_20.1-papi-mpi-pgi"
+    #export TAU_MAKEFILE="${TAU_DIR}/lib/Makefile.tau-pgi_20.1-papi-mpi-pdt-openmp-opari-pgi"
     module load papi
     #source ./summit-gccvars.sh
     ;;
