@@ -240,8 +240,8 @@ case ${COMPILER} in
     export TAUVER="2.29.1"
     module load tau/${TAUVER}
     #export TAU_MAKEFILE="${TAU_DIR}/lib/Makefile.tau-pgi_19.9-papi-mpi-pgi"
-    export TAU_MAKEFILE="${TAU_DIR}/lib/Makefile.tau-pgi_20.1-papi-mpi-pgi"
-    #export TAU_MAKEFILE="${TAU_DIR}/lib/Makefile.tau-pgi_20.1-papi-mpi-pdt-openmp-opari-pgi"
+    #export TAU_MAKEFILE="${TAU_DIR}/lib/Makefile.tau-pgi_20.1-papi-mpi-pgi"
+    export TAU_MAKEFILE="${TAU_DIR}/lib/Makefile.tau-pgi20.1_ompt-papi-ompt-v5-mpi-openmp-pgi"
     module load papi
     #source ./summit-gccvars.sh
     ;;

@@ -10,9 +10,9 @@ COMPILER = tau-pgi
 CPP_OPTS = -Mpreprocess
 
 # Add your custom preprocessor defines here
-CPP_OPTS += -D_DEBUG_bmegqblh_ # Output debugging info related to bmegqblh
-CPP_OPTS += -D_DEBUG_megqblh_ # Output debugging info related to genmegqblh
-CPP_OPTS += -D_DUMP_spinor_ud_ # Dump spinor_ud when spinpol = .TRUE.
+#CPP_OPTS += -D_DEBUG_bmegqblh_ # Output debugging info related to bmegqblh
+#CPP_OPTS += -D_DEBUG_megqblh_ # Output debugging info related to genmegqblh
+#CPP_OPTS += -D_DUMP_spinor_ud_ # Dump spinor_ud when spinpol = .TRUE.
 
 # Common compile time options
 F90_OPTS = $(CPP_OPTS)
@@ -89,17 +89,17 @@ EXE_SFX = fastprof
 #==============================================================================
 
 # Use PGI's bundled BLAS and LAPACK
-# TODO: test performance vs ESSL
-#LAPACK_LIB = -lblas -llapack
+# Note: disabling ESSL, for now
+LAPACK_LIB = -lblas -llapack
 
 # Use IBM ESSL (depends on libxlf90_r)
 # This path was extracted from the modules and stored as summit-xlpaths.sh
 # Make sure to `source summit-xlpaths.sh` and `module load essl`
 # Note: it used to be necessary to also load libxlf90_r path to LD_LIBRARY_PATH
 #       on run time; this was fixed with the Mar 10 2020 stack upgrade
-ESSL_PATH = ${OLCF_ESSL_ROOT}/lib64
-XLF_PATH = ${OLCF_XLF_ROOT}/lib
-LAPACK_LIB = -L$(ESSL_PATH) -lessl -L$(XLF_PATH) -lxlf90_r
+#ESSL_PATH = ${OLCF_ESSL_ROOT}/lib64
+#XLF_PATH = ${OLCF_XLF_ROOT}/lib
+#LAPACK_LIB = -L$(ESSL_PATH) -lessl -L$(XLF_PATH) -lxlf90_r
 
 #==============================================================================
 # HDF5
@@ -107,9 +107,9 @@ LAPACK_LIB = -L$(ESSL_PATH) -lessl -L$(XLF_PATH) -lxlf90_r
 
 # To disable, comment these three lines
 # Make sure to `module load hdf5`
-HDF5_INC = -I${OLCF_HDF5_ROOT}/include
-HDF5_LIB = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5_cpp -lhdf5_hl -lhdf5 -ldl
-HDF5_CPP_OPTS := -D_HDF5_
+#HDF5_INC = -I${OLCF_HDF5_ROOT}/include
+#HDF5_LIB = -L${OLCF_HDF5_ROOT}/lib -lhdf5_fortran -lhdf5_cpp -lhdf5_hl -lhdf5 -ldl
+#HDF5_CPP_OPTS := -D_HDF5_
 
 CPP_OPTS += $(HDF5_CPP_OPTS)
 F90_OPTS += $(HDF5_INC)
