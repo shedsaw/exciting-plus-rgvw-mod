@@ -198,8 +198,8 @@ case ${COMPILER} in
   pgi)
     getxlvars
     #getgccvars
-    module load pgi/19.9
-    #module load pgi/20.1
+    #module load pgi/19.9
+    module load pgi/20.1
     export COMPILERVER="${PGIVER}"
     #source ./summit-gccvars.sh
     ;;
