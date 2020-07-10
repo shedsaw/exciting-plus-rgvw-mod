@@ -250,6 +250,10 @@ call init_kq(iq)
 call init_band_trans(allibt)
 ! initialize Gaunt-like coefficients 
 call init_gntuju(iq,lmaxexp)
+
+!$ACC ENTER DATA COPYIN( sfacgq, gntuju, bmegqblh, idxtranblhloc, &
+!$ACC                    spinor_ud, ngq(iq), ias2ic )
+
 call timer_stop(1)
 if (wproc) then
   write(150,*)
@@ -443,12 +447,17 @@ if (wproc) then
   write(150,'("Speed (me/sec/proc)                : ",F10.2)')dn1/t2
   call flushifc(150)
 endif
+
+!$ACC EXIT DATA DELETE( sfacgq, gntuju, bmegqblh, idxtranblhloc, &
+!$ACC                   spinor_ud, ngq(iq), ias2ic )
+
 deallocate(wfsvmt_jk)
 deallocate(wfsvit_jk)
 deallocate(igkignr_jk)
 deallocate(ngntuju)
 deallocate(igntuju)
 deallocate(gntuju)
+
 call papi_timer_stop(pt_megq)
 call mpi_grid_barrier((/dim_k/))
 if (wproc) then

@@ -4,6 +4,11 @@ use modmain
 use mod_addons_q
 use mod_nrkp
 use mod_expigqr
+
+#ifdef _MAGMA_
+USE mod_magma
+#endif /* _MAGMA_ */
+
 implicit none
 integer, intent(in) :: iq
 integer, intent(in) :: ikloc
@@ -28,8 +33,10 @@ complex(8), allocatable :: wfir1(:)
 !--begin Convert to true ZGEMM
   INTEGER :: nmt                    ! Number of muffin-tin elements
   INTEGER, PARAMETER :: nb = 64     ! Block size for ZGEMM batching
+  INTEGER :: ibatch, nbatch, nblock ! Batch index and number of batches
   INTEGER :: k1, k2, ki, nsize      ! Dummy variables for batching
-  COMPLEX(KIND((0.D0,1.D0))), DIMENSION( lmmaxapw*nufrmax, nb ) :: b1, b2
+  COMPLEX(KIND((0.D0,1.D0))), DIMENSION(:,:,:), ALLOCATABLE :: b1, b2, bgntuju
+  !COMPLEX(KIND((0.D0,1.D0))), DIMENSION( lmmaxapw*nufrmax, nb ) :: b1, b2
   COMPLEX(KIND((0.D0,1.D0))), &
     DIMENSION( lmmaxapw*nufrmax, nb, natmtot, ngq(iq) ) :: wftmp1mt
 !--end Convert to true ZGEMM
@@ -47,6 +54,8 @@ allocate(wftmp2(wfsize,nstsv))   ! TODO: Check contiguity of ZCOPY transfers
 allocate(wfir1(ngrtot))
 call papi_timer_start(pt_megqblh)
 
+!$ACC ENTER DATA COPYIN( wfsvmt1 )
+
 ! global k-point
 ik=mpi_grid_map(nkptnr,dim_k,loc=ikloc)
 ! jk=k+q-G_q
@@ -62,7 +71,7 @@ igkq=idxkq(2,ik)
 
 #ifdef _DEBUG_megqblh_
   dbgunit2 = 2000 + iproc ! Make sure this matches the definition in mod_expigqr::genmegq()
-  dbgcnt2 = 1
+  !dbgcnt2 = 1 ! Not needed anymore since we have ibatch now
 #endif
 
 do ispn1=1,nspinor
@@ -90,23 +99,55 @@ do ispn1=1,nspinor
   ! Number of muffin-tin elements
   nmt = lmmaxapw*nufrmax
 
-  ! Batching by block size nb
+  ! Number of batches
+  nblock = CEILING( REAL(idxhiband)/REAL(nb) )
+  nbatch = ngq(iq) * natmtot * nblock
+  ALLOCATE( bgntuju( nmt, nmt, nbatch ) )
+  ALLOCATE( b1( nmt, nb, nbatch ) )
+  ALLOCATE( b2( nmt, nb, nbatch ) )
+#ifdef _OPENACC
+  !$ACC ENTER DATA CREATE( bgntuju, b1, b2 )
+#endif /* _OPENACC */
+
+  ! Batching by block size nb and over ig and ias loops
+  ibatch = 0
   DO k1 = 1, idxhiband, nb
      k2 = MIN( idxhiband, k1+nb-1 )
      nsize = k2 - k1 + 1
 
-#ifdef _DEBUG_megqblh_
-     WRITE( dbgunit2, '(4(A,I4))' ) 'Batch ', dbgcnt2, ' start=', k1, ' end=', k2, ' nsize=', nsize
-     dbgcnt2 = dbgcnt2 + 1
-#endif /* _DEBUG_megqblh_ */
+#ifdef _OPENACC
+     ! Fill in bgntuju and b1 on device
+     !$ACC PARALLEL LOOP COLLAPSE(2) &
+     !$ACC   PRESENT( bgntuju, b1, b2, gntuju, sfacgq, wfsvmt1, &
+     !$ACC            bmegqblh(:,:,ikloc), idxtranblhloc(:,ikloc), spinor_ud, &
+     !$ACC            ngq(iq), ias2ic ) &
+     !$ACC   COPYIN( ibatch )
 
+#else
+     ! Fill in bgntuju and b1 on CPU
      !$OMP PARALLEL DO COLLAPSE(2) DEFAULT(SHARED) &
-     !$OMP   PRIVATE(ig,ias,ki,iband,i,ist1,ic,l1,b1,b2)
+     !$OMP   PRIVATE(ig,ias,ic,ki,iband,i,ist1,ic,l1)
+#endif
      do ig=1,ngq(iq)
         do ias=1,natmtot
 
-           b1(:,:) = zzero
-           b2(:,:) = zzero
+#ifndef _OPENACC
+#ifdef _DEBUG_megqblh_
+           ! OpenACC doesn't support WRITE statements in device code
+           WRITE( dbgunit2, '(4(A,I4))' ) 'Batch ', ibatch, &
+                                          ' ig=', ig, 'ias=', ias, &
+                                          ' start=', k1, ' end=', k2, ' nsize=', nsize
+#endif /* _DEBUG_megqblh_ */
+#endif /* _OPENACC */
+
+           !$OMP ATOMIC
+           ibatch = ibatch + 1
+
+           ic = ias2ic(ias)
+           bgntuju(:,:,ibatch) = gntuju(:,:,ic,ig)
+
+           b1(:,:,ibatch) = zzero
+           b2(:,:,ibatch) = zzero
 
            ! Loop for a single batch
            DO ki = 1, nsize
@@ -122,11 +163,74 @@ do ispn1=1,nspinor
               endif
               if (l1) then
                  ! precompute muffin-tin part of \psi_1^{*}(r)*e^{-i(G+q)r}
-                 b1(:,ki) = DCONJG( wfsvmt1(:,ias,ispn1,ist1) * &
+                 b1(:,ki,ibatch) = DCONJG( wfsvmt1(:,ias,ispn1,ist1) * &
                                            sfacgq(ig,ias) )
               END IF ! l1
 
            END DO ! ki
+
+        enddo !ias
+     enddo !ig
+#ifdef _OPENACC
+     !$ACC END PARALLEL LOOP
+#else
+     !$OMP END PARALLEL DO
+#endif /* _OPENACC */
+
+  END DO ! k1
+
+#ifndef _OPENACC
+  !CALL cudaMemcpy( d_bgntuju, bgntuju, cudaMemcpyHostToDevice )
+  !CALL cudaMemcpy( d_b1, b1, cudaMemcpyHostToDevice )
+#endif /* _OPENACC */
+
+#ifdef _MAGMA_
+
+  ! Perform batched ZGEMM on device using MAGMA
+  CALL magma_zgemm_batched_f( 'N', 'N', nmt, nsize, nmt, &
+                               zone,  bgntuju(:,:,:), nmt, &
+                                      b1(:,:,:),      nmt, &
+                               zzero, b2(:,:,:),      nmt, &
+                               nbatch )
+
+  ! Fetch result from device
+#ifdef _OPENACC
+  !$ACC UPDATE SELF( b2 )
+#else
+  !CALL cudaMemcpy( b2, d_b2, cudaMemcpyDeviceToHost )
+#endif /* _OPENACC */
+
+  ! Collect results into wftmp1mt
+  ibatch = 0
+  DO ki = 1, nblock
+
+     k1 = (ki-1)*nb + 1
+     IF( ki == nblock ) THEN
+        k2 = idxhiband
+     ELSE
+        k2 = ki*nb
+     END IF
+
+     DO ig = 1, ngq(iq)
+        DO ias = 1, natmtot
+
+           ibatch = ibatch + 1
+           wftmp1mt(:,k1:k2,ias,ig) = b2(:,:,ibatch)
+
+        END DO ! ig
+     END DO ! ias
+  END DO ! ki
+
+#else
+
+  ibatch = 0
+  ! Perform batched ZGEMM on CPU using OpenMP
+  !$OMP PARALLEL DO COLLAPSE(3) DEFAULT(SHARED) &
+  !$OMP   PRIVATE(ig,ias,ic,k1,k2,ki)
+  DO ki = 1, nblock
+     do ig=1,ngq(iq)
+        do ias=1,natmtot
+           ic = ias2ic(ias)
 
            ! Original code for historical purpose
            !do j=1,ngntuju(ic,ig)
@@ -134,7 +238,8 @@ do ispn1=1,nspinor
            !    &b1(igntuju(1,j,ic,ig))*gntuju(j,ic,ig)
            !enddo
 
-           ic = ias2ic(ias)
+           !$OMP ATOMIC
+           ibatch = ibatch + 1
 
            ! Perform ZGEMM by batch
            ! Reminder: ZGEMM( transA, transB, M, N, K, alpha,
@@ -144,8 +249,8 @@ do ispn1=1,nspinor
            ! nsize = number of bands per batch (maximum nb = 64, see line 30)
            CALL zgemm( 'N', 'N', nmt, nsize, nmt, &
                        zone,  gntuju(1,1,ic,ig), nmt, &
-                              b1(1,1),           nmt, &
-                       zzero, b2(1,1),           nmt )
+                              b1(1,1,ibatch), nmt, &
+                       zzero, b2(1,1,ibatch), nmt )
 
            ! Note: this one is clearer but generates implicit copyin and copyout
            !CALL zgemm( 'N', 'N', nmt, nsize, nmt, &
@@ -153,14 +258,22 @@ do ispn1=1,nspinor
            !                    b1(1:nmt,1:nsize),  nmt, &
            !             zzero, b2(1:nmt,1:nsize),  nmt )
 
+           k1 = (ki-1)*nb + 1
+           IF( ki == nblock ) THEN
+              k2 = idxhiband
+           ELSE
+              k2 = ibatch*nb
+           END IF
+
            ! Collect results into wftmp1mt
-           wftmp1mt(:,k1:k2,ias,ig) = b2(:,:)
+           wftmp1mt(:,k1:k2,ias,ig) = b2(:,:,ibatch)
 
         enddo !ias
      enddo !ig
-     !$OMP END PARALLEL DO
 
-  END DO ! k1
+  END DO ! ibatch
+  !$OMP END PARALLEL DO
+#endif
 
   call timer_stop(3)
   call papi_timer_stop(pt_megqblh_mt)
@@ -227,7 +340,7 @@ IF( ntran > 0 ) THEN
   WRITE( dbgunit1, '(7(1X,I5))' ) dbgcnt1, ikloc, iq, iband, i, ntran, i+ntran-1
   dbgcnt1 = dbgcnt1 + 1
 END IF
-#endif // _DEBUG_bmegqblh_
+#endif /* _DEBUG_bmegqblh_ */
 
   ! Load number of matching |ist2=n'> ket states for each <ist1=n| bra
   IF( ltranconst ) THEN
@@ -280,7 +393,7 @@ END IF
 
 #ifdef _DEBUG_bmegqblh_
      WRITE( dbgunit1, '(A,I3)') 'highest band = ', idxhiband
-#endif // _DEBUG_bmegqblh_
+#endif /* _DEBUG_bmegqblh_ */
 
 !--end Convert do while into bounded do loop
 
@@ -288,6 +401,8 @@ enddo !ispn
 deallocate(wftmp1)
 deallocate(wftmp2)
 deallocate(wfir1)
+
+!$ACC EXIT DATA DELETE( wfsvmt1 )
 
 call papi_timer_stop(pt_megqblh)
 
