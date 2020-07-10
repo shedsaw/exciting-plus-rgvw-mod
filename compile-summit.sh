@@ -2,7 +2,7 @@
 
 about() {
   echo "Exciting-Plus compile script for Summit (ORNL)"
-  echo "Last edited: Jun 12, 2020 (WYP)"
+  echo "Last edited: Jul 9, 2020 (WYP)"
 }
 
 # Check whether script is executed from Summit login node
@@ -40,6 +40,7 @@ helptext() {
   echo "  help       Show this help text"
   echo
   echo "  elk        Compile Exciting-Plus"
+  echo "  acc        Compile Exciting-Plus with OpenACC (requires PGI compiler)"
   echo "  tau        Compile Exciting-Plus with TAU 2.29.1 + chosen compiler"
   echo "  scorep     Compile Exciting-Plus with Score-P 6.0 + chosen compiler"
   echo
@@ -62,6 +63,7 @@ if [ "x$MAKE"     == "x"  ]; then MAKE=make; fi
 if [ "x$COMPILER" == "x"  ]; then COMPILER=ibm; fi
 if [ "x$USEESSL"  != "x0" ]; then export USEESSL=1; fi
 if [ "x$USEHDF5"  != "x0" ]; then export USEHDF5=1; fi
+if [ "x$USEACC"   == "x"  ]; then export USEACC=none; fi
 
 # Default choices
 export BUILDELK=1
@@ -99,6 +101,16 @@ parsetask() {
   # Build Exciting-Plus, CPU-only version
     elk )
       export BUILDELK=1
+      export USEACC=none
+      return 0
+      ;;
+
+  # Build Exciting-Plus, OpenACC version
+    acc )
+      export BUILDELK=1
+      export USEACC=volta
+      export COMPILER=pgi
+      export USEESSL=1
       return 0
       ;;
 
@@ -261,7 +273,24 @@ case ${COMPILER} in
     exit 1
 esac
 
-# Build Exciting-Plus CPU-only version
+# Copy the appropriate make.inc
+# TODO: Write the unavailable make.inc files
+case ${USEACC} in
+  none )
+    cp make.inc.summit.${COMPILER}.cpu make.inc
+    ;;
+  volta )
+    cp make.inc.summit.pgi.acc make.inc
+    module load cuda
+    module load netlib-lapack
+    ;;
+  *)
+    echo "Error USEACC=$USEACC"
+    exit 1
+    ;;
+esac
+
+# Build Exciting-Plus
 if [ "x${BUILDELK}" == "x1" ]; then
 
   clear; hline; echo;
@@ -292,10 +321,6 @@ if [ "x${BUILDELK}" == "x1" ]; then
     module load hdf5
     echo "Using HDF5"
   fi
-
-  # Copy the appropriate make.inc
-  # TODO: Write the unavailable make.inc files
-  cp make.inc.summit.${COMPILER}.cpu make.inc
 
   # Extract link line from make.inc
   if [ "x${USETAU}" == "x1" ]; then
